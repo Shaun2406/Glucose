@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*6
 """
 Spyder Editor
 
@@ -14,7 +14,7 @@ import scipy.optimize
 plt.close("all")
 
 """Loading Patient Data and Assigning Options"""
-Patient = scipy.io.loadmat('SP5006-1.mat')
+Patient = scipy.io.loadmat('SP5005-1.mat')
 Dia = 0
 Lm = len(Patient['GIQ'])
 Lh = int(Lm/60)
@@ -36,10 +36,11 @@ Ginter = np.interp(range(Lm),Patient['Treal'][:,0],Patient['Greal'][:,0])
 def ICING2(t, G):
   Uent = min(max(Patient['uenmin'],Patient['k1'][0,Dia]*Ginter[int(t)]+Patient['k2'][0,Dia]),Patient['uenmax'])
   Pt = P[int(t)]
+  PNt = PN[int(t)] 
   Uext = Uex[int(t)]
   Gdot = np.zeros(6)
   Gdot[0] = Ginter[int(t)]*G[3]/(1+Patient['alpha_G']*G[3])
-  Gdot[1] = -Patient['pG']*Ginter[int(t)]+(min(Patient['d2']*G[5],Patient['Pmax'])+Patient['EGP'][0,1]-Patient['CNS'])/Patient['Vg']
+  Gdot[1] = -Patient['pG']*Ginter[int(t)]+(min(Patient['d2']*G[5],Patient['Pmax'])+Patient['EGP'][0,1]-Patient['CNS']+PNt)/Patient['Vg']
   Gdot[2] = -Patient['nL']*G[2]/(1+Patient['alpha_I']*G[2])-Patient['nK']*G[2]-(G[2]-G[3])*Patient['nI']+Uext/Patient['Vi']+(1-Patient['xl'])*Uent/Patient['Vi']
   Gdot[3] = (G[2]-G[3])*Patient['nI']-Patient['nC']*G[3]/(1+Patient['alpha_G']*G[3])
   Gdot[4] = -Patient['d1']*G[4]+Pt
@@ -65,11 +66,11 @@ def ICING2int(t, G):
 t = range(Lm)  
 y_id = np.zeros([Lm,6])
 y_id[0,0] = Ginter[0]*Patient['GIQ'][0,2]/(1+Patient['alpha_G']*Patient['GIQ'][0,2])
-y_id[0,1] = -(Ginter[60]-Ginter[0])-Patient['pG']*Ginter[0]+(min(Patient['d2']*0,Patient['Pmax'])+Patient['EGP'][0,1]-Patient['CNS'])/Patient['Vg']
+y_id[0,1] = -Patient['pG']*Ginter[0]+(min(Patient['d2']*Patient['Po']/Patient['d2'],Patient['Pmax'])+Patient['EGP'][0,1]-Patient['CNS'])/Patient['Vg']
 y_id[0,2] = (Patient['Uo']+(1-Patient['xl'])*min(max(Patient['uenmin'],Patient['k1'][0,Dia]*Patient['Greal'][0]+Patient['k2'][0,Dia]),Patient['uenmax']))/Patient['Vi']/(Patient['nK']+Patient['nL']+0.5*Patient['nI'])
 y_id[0,3] = y_id[0,2]/2
-y_id[0,4] = P[0]/Patient['d1']
-y_id[0,5] = P[0]/Patient['d2']
+y_id[0,4] = Patient['Po']/Patient['d1']
+y_id[0,5] = Patient['Po']/Patient['d2']
 r = scipy.integrate.ode(ICING2).set_integrator("dopri5")
 for i in range(1,Lm):
   r.set_initial_value(y_id[i-1,:],i-1)
@@ -91,8 +92,8 @@ y = np.zeros([Lm,5])
 y[0,0] = Patient['Greal'][0]
 y[0,1] = (Patient['Uo']+(1-Patient['xl'])*min(max(Patient['uenmin'],Patient['k1'][0,Dia]*Patient['Greal'][0]+Patient['k2'][0,Dia]),Patient['uenmax']))/Patient['Vi']/(Patient['nK']+Patient['nL']+0.5*Patient['nI'])
 y[0,2] = y_id[0,2]/2
-y[0,3] = P[0]/Patient['d1']
-y[0,4] = P[0]/Patient['d2']
+y[0,3] = Patient['Po']/Patient['d1']
+y[0,4] = Patient['Po']/Patient['d2']
 r = scipy.integrate.ode(ICING2int).set_integrator("dopri5")
 for i in range(1,Lm):
   r.set_initial_value(y[i-1,:],i-1)
