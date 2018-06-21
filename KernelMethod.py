@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from multiprocessing import Pool
 import scipy.stats
+from time import time
 plt.close("all")
 
 def bivar_norm(x, y, idx):
@@ -19,7 +20,7 @@ def bivar_norm(x, y, idx):
     for i in range(len(x)):
         for j in range(len(y)):
             xy = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1]], Ain)
-            pdf[j,i] = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1])*np.exp(-1/2*((xy[0]-Xindec[idx,0])**2/Sigma[idx,0]**2+(xy[1]-Xindec[idx,1])**2/Sigma[idx,1]**2))*detAin
+            pdf[j,i] = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1])*np.exp(-1/2*((xy[0]-Xindec[idx,0])**2/Sigma[idx,0]**2+(xy[1]-Xindec[idx,1])**2/Sigma[idx,1]**2))
     return pdf
 
 def trivar_norm(x, y, z, idx):
@@ -33,7 +34,7 @@ def trivar_norm(x, y, z, idx):
     return pdf
 
 '''LOADING DATA'''
-GlucData = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\GlucDataOverall.csv')
+GlucData = pd.read_csv('GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
@@ -107,24 +108,29 @@ for i in range(k):
     m = m < k**(-1/6)
     M[i] = (np.sum(m)*R_X**3*k**(1/2))**(-1/6)
 Sigma = pd.DataFrame({'SigASIt': M[:,0], 'SigBGt': M[:,1], 'SigCSIt+1': M[:,2]})
-Sigma.to_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')'''
-Sigma = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')
+Sigma.to_csv('KernelSigma.csv')'''
+Sigma = pd.read_csv('KernelSigma.csv')
 Sigma = Sigma.drop(['Unnamed: 0'], axis = 1)
 Sigma = np.array(Sigma)
 
-Resolution = 150
+Resolution = 10
 
 SItx = np.linspace(np.min(Xin[:,0]), np.max(Xin[:,0]), Resolution)
 Gtx = np.linspace(np.min(Xin[:,1]), np.max(Xin[:,1]), Resolution) 
 PDF = np.zeros([Resolution, Resolution])
 Xinmean = np.mean(Xin, 0)
 
+start = time()
+
 for i in range(len(X)):
     PDF = PDF + bivar_norm(SItx, Gtx, i)
     if i % 1000 == 0:
         print(i)
-np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')
-'''PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')
+        
+stop = time()
+print(stop-start)
+np.savetxt('WX.txt', PDF, delimiter=',')
+'''PDF = np.loadtxt('WXtotal.txt', delimiter=',')
 
 SI3D, G3D = np.meshgrid(SItx, Gtx)
 ax = fig.add_subplot(111, projection='3d')
