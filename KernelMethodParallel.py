@@ -13,14 +13,19 @@ from multiprocessing import Pool
 import scipy.stats
 plt.close("all")
 
-def bivar_norm(x, y, idx):
+def bivar_norm(x, y):
     '''Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)'''
-    pdf = np.zeros([len(x), len(y)])
-    for i in range(len(x)):
-        for j in range(len(y)):
-            xy = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1]], Ain)
-            pdf[j,i] = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1])*np.exp(-1/2*((xy[0]-Xindec[idx,0])**2/Sigma[idx,0]**2+(xy[1]-Xindec[idx,1])**2/Sigma[idx,1]**2))*detAin
+    xy = np.matmul([x-Xinmean[0], y-Xinmean[1]], Ain)
+    pdf = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1])*np.exp(-1/2*((xy[0]-Xindec[idx,0])**2/Sigma[idx,0]**2+(xy[1]-Xindec[idx,1])**2/Sigma[idx,1]**2))*detAin
     return pdf
+
+def data_stream(a, b):
+    for i, av in enumerate(a):
+        for j, bv in enumerate(b):
+            yield (i, j), (av, bv)
+            
+def myfunc(args):
+    return args[0], bivar_norm(*args[1])
 
 def trivar_norm(x, y, z, idx):
     '''Trivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)'''
@@ -118,18 +123,22 @@ SItx = np.linspace(np.min(Xin[:,0]), np.max(Xin[:,0]), Resolution)
 Gtx = np.linspace(np.min(Xin[:,1]), np.max(Xin[:,1]), Resolution) 
 PDF = np.zeros([Resolution, Resolution])
 Xinmean = np.mean(Xin, 0)
-
-for i in range(len(X)):
-    PDF = PDF + bivar_norm(SItx, Gtx, i)
-    if i % 1000 == 0:
-        print(i)
+for i in range(1000):
+    if __name__ == "__main__":
+        __spec__ = "ModuleSpec(name='builtins', loader=<class '_frozen_importlib.BuiltinImporter'>)"
+        idx = i
+        global di
+        pool = Pool(processes=12)
+        PDFi = pool.map(myfunc, data_stream(SItx, Gtx))
+        print(PDFi)
+        PDF = PDF + PDFi
+        if i % 1000 == 0:
+            print(i)
 np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')
-'''PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')
+'''PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')'''
 
-SI3D, G3D = np.meshgrid(SItx, Gtx)
-ax = fig.add_subplot(111, projection='3d')
-plt.contour(SItx, Gtx, (PDF), 100)
-ax.plot_surface(SI3D, G3D, PDF)
+plt.figure()
+plt.contour(SItx, Gtx, np.log(PDF), 100)
 print(np.sum(PDF)*(np.max(X[:,0])-np.min(X[:,0]))/Resolution*(np.max(X[:,1])-np.min(X[:,1]))/Resolution)
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')
@@ -138,4 +147,4 @@ plt.figure()
 plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
 
 plt.figure()
-plt.plot(Xin[:,0], Xin[:,1], 'kx')'''
+plt.plot(Xin[:,0], Xin[:,1], 'kx')
