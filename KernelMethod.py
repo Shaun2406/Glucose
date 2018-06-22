@@ -118,18 +118,20 @@ SItx = np.linspace(np.min(Xin[:,0]), np.max(Xin[:,0]), Resolution)
 Gtx = np.linspace(np.min(Xin[:,1]), np.max(Xin[:,1]), Resolution) 
 PDF = np.zeros([Resolution, Resolution])
 Xinmean = np.mean(Xin, 0)
-
+'''
 for i in range(len(X)):
     PDF = PDF + bivar_norm(SItx, Gtx, i)
     if i % 1000 == 0:
         print(i)
-np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')
-'''PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')
+np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')'''
+PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')
 
 SI3D, G3D = np.meshgrid(SItx, Gtx)
 ax = fig.add_subplot(111, projection='3d')
-plt.contour(SItx, Gtx, (PDF), 100)
 ax.plot_surface(SI3D, G3D, PDF)
+
+'''plt.figure()
+plt.contour(SItx, Gtx, (PDF), 100)'''
 print(np.sum(PDF)*(np.max(X[:,0])-np.min(X[:,0]))/Resolution*(np.max(X[:,1])-np.min(X[:,1]))/Resolution)
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')
@@ -138,4 +140,4 @@ plt.figure()
 plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
 
 plt.figure()
-plt.plot(Xin[:,0], Xin[:,1], 'kx')'''
+plt.plot(Xin[:,0], Xin[:,1], 'kx')
