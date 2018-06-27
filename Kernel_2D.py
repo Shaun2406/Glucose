@@ -8,8 +8,6 @@ Created on Fri Jun  8 12:06:41 2018
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
-import scipy.stats
 from time import time
 from multiprocessing import Pool, Lock, Array
 plt.close("all")
@@ -30,7 +28,7 @@ def bivar_norm(measured_pt, sigma):
     for x in range(len(grid_pts[0])):
         for y in range(len(grid_pts[1])):
             xy = np.matmul([grid_pts[0][x]-means[0], grid_pts[1][y]-means[1]], trf)
-            density_func[y,x] = 1/(2*np.pi*sigma**2)*np.exp(-1/2*((xy[0]-measured_pt[0])**2/sigma**2+(xy[1]-measured_pt[1])**2/sigma**2))
+            density_func[y,x] = 1/(2*np.pi*sigma**2)*np.exp(-0.5*((xy[0]-measured_pt[0])**2+(xy[1]-measured_pt[1])**2)/sigma**2)
     out_array = np.frombuffer(out.get_obj()).reshape((res, res))
     lock.acquire()
     try:
@@ -38,28 +36,29 @@ def bivar_norm(measured_pt, sigma):
     finally:
         lock.release()
 
+def Trap2D(Arr):
+    l = len(Arr)-1
+    corners = Arr[0,0]+Arr[l,l]+Arr[0,l]+Arr[l,0]
+    edges = np.sum(Arr[1:l,0])+np.sum(Arr[1:l,l])+np.sum(Arr[0,1:l])+np.sum(Arr[l,1:l])
+    middle = np.sum(Arr[1:l,1:l])
+    tot = (middle*4+edges*2+corners)/4*8.4/(res-1)**2
+    return tot
+
 def load_data():
-    #LOADING DATA
-    glucData = pd.read_csv('GlucDataOverall.csv')
-    glucData = glucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
-    glucData['Gender'] = glucData['Gender'] == 'female'
-    glucData['Gender'] = glucData['Gender'].astype(int)
+    #Loading and transforming data
+    GlucData = pd.read_csv('GlucDataOverall.csv')
+    GlucData = GlucData[GlucData['SIt'] > 0]
+    GlucData = GlucData[GlucData['SIt+1'] > 0]
     
-    #LOGGING RELEVANT DATA
-    glucData['Gt'] = np.log10(glucData['Gt'])
-    glucData = glucData[np.isnan(glucData['Gt']) == 0]
+    GlucData['Gt'] = np.log10(GlucData['Gt'])
+    GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
+    GlucData['SIt'] = np.log10(GlucData['SIt'])
     
-    glucData['SIt+1'] = np.log10(glucData['SIt+1'])
-    glucData = glucData[np.isnan(glucData['SIt+1']) == 0]
-    
-    glucData['SIt'] = np.log10(glucData['SIt'])
-    glucData = glucData[np.isnan(glucData['SIt']) == 0]
-    
-    glucData = glucData.reset_index()
-    return glucData
+    GlucData = GlucData.reset_index()
+    return GlucData
 
 def transform(glucData):
-    '''Create an Ortho-Normalised Matrix Xdec - 2D, for w(x)'''
+    #Create an Ortho-Normalised Matrix Xdec - 2D
     Xin = glucData.loc[:,['SIt', 'Gt']].values
     Cin = np.cov(np.transpose(Xin))
     Rin = np.linalg.cholesky(Cin)
@@ -67,6 +66,8 @@ def transform(glucData):
     detAin = np.linalg.det(Ain)
     Xin0 = Xin - np.mean(Xin, 0)
     Xindec = np.matmul(Xin0, Ain)
+    
+    #Xindec = Xindec[0:10,:]
     
     return (Xin, Xindec, detAin, Ain)
 
@@ -79,10 +80,9 @@ if __name__ == '__main__':
     sigma = sigma.drop(['Unnamed: 0'], axis = 1)
     sigma = np.array(sigma)
     
-    res = 5
+    res = 150
     
-    grid_pts = [np.linspace(np.min(measured[:,0]), np.max(measured[:,0]), res),
-                np.linspace(np.min(measured[:,1]), np.max(measured[:,1]), res)]
+    grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res)]
     means = np.mean(measured, 0)
 
     density_func_raw = Array('d', res**2)
@@ -92,7 +92,6 @@ if __name__ == '__main__':
     with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw, means, grid_pts, trf, res)) as pool:
         pool.starmap(bivar_norm, [(measured_trf[i], sigma[i][0]) for i in range(len(measured_trf))])
     print(time() - start)
-    print(density_func)
-
-
-#np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')
+    density_func = density_func*trf_det
+    #np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X', density_func)
+    print(Trap2D(density_func))

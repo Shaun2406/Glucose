@@ -10,24 +10,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.stats
-from time import time
-from multiprocessing import Pool, Lock, Array
 plt.close("all")
 
-def trivar_norm(measured_pt, sigma):
-    density_func = np.zeros([len(grid_pts[0]), len(grid_pts[1]), len(grid_pts[2])])
-    for x in range(len(grid_pts[0])):
-        for y in range(len(grid_pts[1])):
-            for z in range(len(grid_pts[2])):
-                xyz = np.matmul([grid_pts[0][x]-means[0], grid_pts[1][y]-means[1], grid_pts[2][z]-means[2]], trf)
-                density_func[y,x,z] = 1/((2*np.pi)**(3/2)*sigma**3)*np.exp(-1/2*((xyz[0]-measured_pt[0])**2/sigma**2+(xyz[1]-measured_pt[1])**2/sigma**2+(xyz[2]-measured_pt[2])**2/sigma**2))
-    out_array = np.frombuffer(out.get_obj()).reshape((res, res, res))
-    lock.acquire()
-    try:
-        out_array += density_func
-    finally:
-        lock.release()
+def Trap2D(Arr):
+    l = len(Arr)-1
+    corners = Arr[0,0]+Arr[l,l]+Arr[0,l]+Arr[l,0]
+    edges = np.sum(Arr[1:l,0])+np.sum(Arr[1:l,l])+np.sum(Arr[0,1:l])+np.sum(Arr[l,1:l])
+    middle = np.sum(Arr[1:l,1:l])
+    tot = (middle*4+edges*2+corners)/4*8.4/(res-1)**2
+    return tot
 
+def Trap3D(Arr):
+    l = len(Arr)-1
+    corners = Arr[0,0,0]+Arr[0,0,l]+Arr[0,l,0]+Arr[l,0,0]+Arr[0,l,l]+Arr[l,0,l]+Arr[l,l,0]+Arr[l,l,l]
+    edges1 = np.sum(Arr[1:l,0,0])+np.sum(Arr[1:l,0,l])+np.sum(Arr[1:l,l,0])+np.sum(Arr[1:l,l,l])
+    edges2 = np.sum(Arr[0,1:l,0])+np.sum(Arr[0,1:l,l])+np.sum(Arr[l,1:l,0])+np.sum(Arr[l,1:l,l])
+    edges3 = np.sum(Arr[0,0,1:l])+np.sum(Arr[0,l,1:l])+np.sum(Arr[l,0,1:l])+np.sum(Arr[l,l,1:l])
+    edges = edges1+edges2+edges3
+    faces = np.sum(Arr[0,1:l,1:l])+np.sum(Arr[1:l,0,1:l])+np.sum(Arr[1:l,1:l,0])+np.sum(Arr[l,1:l,1:l])+np.sum(Arr[1:l,l,1:l])+np.sum(Arr[1:l,1:l,l])
+    middle = np.sum(Arr[1:l,1:l,1:l])
+    tot = (middle*8+faces*4+edges*2+corners)/8*scale/(res-1)**3
+    return tot
+
+res = 150
 def load_data():
     #LOADING DATA
     glucData = pd.read_csv('GlucDataOverall.csv')
@@ -50,38 +55,33 @@ def load_data():
 
 def transform(glucData):
     '''Create an Ortho-Normalised Matrix Xdec - 2D, for w(x)'''
-    Xin = glucData.loc[:,['SIt', 'Gt', 'SIt+1']].values
-    Xin = Xin[0:37554,:]
-    Cin = np.cov(np.transpose(Xin))
-    Rin = np.linalg.cholesky(Cin)
-    Ain = np.linalg.inv(np.transpose(Rin))
-    detAin = np.linalg.det(Ain)
-    Xin0 = Xin - np.mean(Xin, 0)
-    Xindec = np.matmul(Xin0, Ain)
+    X = glucData.loc[:,['SIt', 'Gt', 'SIt+1']].values
+    C = np.cov(np.transpose(X))
+    R = np.linalg.cholesky(C)
+    A = np.linalg.inv(np.transpose(R))
+    detA = np.linalg.det(A)
+    X0 = X - np.mean(X, 0)
+    Xdec = np.matmul(X0, A)
     
-    return (Xin, Xindec, detAin, Ain)
+    return (X, Xdec, detA, A)
 
 glucData = load_data()
 measured, measured_trf, trf_det, trf = transform(glucData)
     
-sigma = pd.read_csv('KernelSigma.csv')
-sigma = sigma.drop(['Unnamed: 0'], axis = 1)
-sigma = np.array(sigma)
-    
-res = 150
-    
-grid_pts = [np.linspace(np.min(measured[:,0]), np.max(measured[:,0]), res),
-            np.linspace(np.min(measured[:,1]), np.max(measured[:,1]), res),
-            np.linspace(np.min(measured[:,2]), np.max(measured[:,2]), res)]
-means = np.mean(measured, 0)
+grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res), np.linspace(-8.5, -1.5, res)]
 
 W3a = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3Xa.npy')
 W3b = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3Xb.npy')
 
 W2D = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
 W3D = W3a + W3b
+'''W2X = np.load('W2X.npy')
+W3X = np.ones([150,150,150])'''
+scale = (np.max(measured[:,0])-np.min(measured[:,0]))*(np.max(measured[:,1])-np.min(measured[:,1]))*(np.max(measured[:,2])-np.min(measured[:,2]))
+print(Trap3D(W3b))
+'''print(Trap2D(W2X))'''
 
-plt.figure()
+'''plt.figure()
 plt.plot(grid_pts[2],W3D[105,105,:])   
 
 print(np.sum(W3D)/res**3*(np.max(measured[:,0])-np.min(measured[:,0]))*(np.max(measured[:,1])-np.min(measured[:,1]))*(np.max(measured[:,2])-np.min(measured[:,2])))
@@ -101,4 +101,4 @@ plt.figure()
 plt.contour(grid_pts[0], grid_pts[1], np.log(W3D[:,:,75]))   
 
 plt.figure()
-plt.plot(grid_pts[2],W3D[105,105,:])   
+plt.plot(grid_pts[2],W3D[105,105,:])   '''

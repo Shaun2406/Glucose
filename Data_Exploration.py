@@ -35,6 +35,24 @@ GlucData['SIt-2'] = np.log10(GlucData['SIt-2'])
 GlucData = GlucData[np.isnan(GlucData['SIt-2']) == 0]
 GlucData = GlucData.reset_index()
 
+#HISTOGRAMS
+'''
+pd.DataFrame.hist(GlucData, 'SIt', bins = 150)
+pd.DataFrame.hist(GlucData, 'Gt', bins = 30)
+pd.DataFrame.hist(GlucData, 'SIt+1', bins = 150)
+
+plt.figure()
+plt.plot(GlucData['SIt'], GlucData['SIt+1'], 'kx')
+
+plt.figure()
+plt.plot(GlucData['Gt'], GlucData['SIt+1'], 'kx')
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+plt.plot(GlucData['SIt'], GlucData['Gt'], GlucData['SIt+1'], 'kx')
+plt.xlabel('Sensitivity SIt')
+plt.ylabel('Glucose Gt')'''
+
 x = GlucData.loc[:, features].values
 y = GlucData.loc[:, target].values
 y = sklpp.StandardScaler().fit_transform(y)

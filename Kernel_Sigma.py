@@ -2,142 +2,114 @@
 """
 Created on Fri Jun  8 12:06:41 2018
 
-@author: smd118
+Non-parallel calculation of probability field, as well as calculation of sigma matrix
 """
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from multiprocessing import Pool
 import scipy.stats
 plt.close("all")
 
 def bivar_norm(x, y, idx):
-    '''Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)'''
+    #Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
     pdf = np.zeros([len(x), len(y)])
     for i in range(len(x)):
         for j in range(len(y)):
             xy = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1]], Ain)
-            pdf[j,i] = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1])*np.exp(-1/2*((xy[0]-Xindec[idx,0])**2/Sigma[idx,0]**2+(xy[1]-Xindec[idx,1])**2/Sigma[idx,1]**2))*detAin
+            pdf[j,i] = 1/(2*np.pi*Sigma[idx]**2)*np.exp(-0.5*((xy[0]-Xindec[idx,0])**2+(xy[1]-Xindec[idx,1])**2)/Sigma[idx,0]**2)*detAin
     return pdf
 
 def trivar_norm(x, y, z, idx):
-    '''Trivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)'''
+    #Trivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
     pdf = np.zeros([len(x), len(y), len(z)])
     for i in range(len(x)):
         for j in range(len(y)):
             for k in range(len(z)):
-                xyz = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1], z[k]-Xinmean[2]], A)
-                pdf[i,j,k] = 1/(2*np.pi*Sigma[idx,0]*Sigma[idx,1]*Sigma[idx,2])**(3/2)*np.exp(-1/2*((xyz[0]-X[idx,0])**2/Sigma[idx,0]**2+(xyz[1]-X[idx,1])**2/Sigma[idx,1]**2+(xyz[2]-X[idx,2])**2/Sigma[idx,2]**2))
+                xyz = np.matmul([x[i]-Xmean[0], y[j]-Xmean[1], z[k]-Xmean[2]], A)
+                pdf[j,i,k] = 1/((2*np.pi)**1.5*Sigma[idx]**3)*np.exp(-0.5*((xyz[0]-X[idx,0])**2+(xyz[1]-X[idx,1])**2+(xyz[2]-X[idx,2])**2)/Sigma[idx,0]**2)*detA
     return pdf
 
-'''LOADING DATA'''
+#LOADING DATA
 GlucData = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
-features = ['Gt', 'Gt-1', 'Gt-2', 'Pt', 'Pt-1', 'Pt-2', 'SIt', 'SIt-1', 'SIt-2', 'ut', 'ut-1', 'ut-2']
 features = ['SIt', 'Gt']
 target = ['SIt+1']
 
-'''LOGGING RELEVANT DATA'''
+#LOGGING RELEVANT DATA
+GlucData = GlucData[GlucData['SIt'] > 0]
+GlucData = GlucData[GlucData['SIt+1'] > 0]
+
 GlucData['Gt'] = np.log10(GlucData['Gt'])
-GlucData = GlucData[np.isnan(GlucData['Gt']) == 0]
-
 GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
-GlucData = GlucData[np.isnan(GlucData['SIt+1']) == 0]
-
 GlucData['SIt'] = np.log10(GlucData['SIt'])
-GlucData = GlucData[np.isnan(GlucData['SIt']) == 0]
 
 GlucData = GlucData.reset_index()
 
-
-'''HISTOGRAMS'''
-'''pd.DataFrame.hist(GlucData, 'SIt+1', bins = 150)
-pd.DataFrame.hist(GlucData, 'Gt', bins = 30)
-
-plt.figure()
-plt.plot(GlucData['SIt'], GlucData['SIt+1'], 'kx')
-
-plt.figure()
-plt.plot(GlucData['Gt'], GlucData['SIt+1'], 'kx')
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-plt.plot(GlucData['SIt'], GlucData['Gt'], GlucData['SIt+1'], 'kx')
-plt.xlabel('Sensitivity SIt')
-plt.ylabel('Glucose Gt')'''
-
-'''Create an Ortho-Normalised Matrix Xdec - 3D'''
+#Create an Ortho-Normalised Matrix Xdec - 3D
 X = GlucData.loc[:, ['SIt', 'Gt', 'SIt+1']].values
 C = np.cov(np.transpose(X))
 R = np.linalg.cholesky(C)
 A = np.linalg.inv(np.transpose(R))
-X0 = X - np.mean(X, 0)
+detA = np.linalg.det(A)
+Xmean = np.mean(X, 0)
+X0 = X - Xmean
 Xdec = np.matmul(X0, A)
 
-'''Create an Ortho-Normalised Matrix Xdec - 2D, for w(x)'''
+#Create an Ortho-Normalised Matrix Xindec - 2D
 Xin = GlucData.loc[:,['SIt', 'Gt']].values
 Cin = np.cov(np.transpose(Xin))
 Rin = np.linalg.cholesky(Cin)
 Ain = np.linalg.inv(np.transpose(Rin))
 detAin = np.linalg.det(Ain)
-Xin0 = Xin - np.mean(Xin, 0)
+Xinmean = np.mean(Xin, 0)
+Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-plt.plot(Xdec[:,0], Xdec[:,1], Xdec[:,2],'kx')
-plt.xlabel('Sensitivity SIt')
-plt.ylabel('Glucose Gt')
-
-'''Scaling Factors from Root Matrix (X), Standard Deviation and Max Range'''
-'''R_X = np.max(np.sqrt(Xdec[:,0]**2+Xdec[:,1]**2+Xdec[:,2]**2))
+#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range
+Radii = np.sort(np.linalg.norm(Xdec, axis = 1))
+R_X = Radii[len(Radii),:]
+R_2X = Radii[np.round(len(Radii/2)),:]
 Xstd = np.std(X,0)
 Xiqr = scipy.stats.iqr(X,0)/1.348
 S_X = np.min([Xstd, Xiqr],0)
 k = len(Xdec)
 M = np.zeros([k,3])
+MB = np.zeros([k,1])
 for i in range(k):
     if i % 1000 == 0:
         print(i)
     m = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     m = m < k**(-1/6)
     M[i] = (np.sum(m)*R_X**3*k**(1/2))**(-1/6)
+    MB[i] = (np.sum(m)*R_X**2*k**(1/3))**(-1/6)
+    
 Sigma = pd.DataFrame({'SigASIt': M[:,0], 'SigBGt': M[:,1], 'SigCSIt+1': M[:,2]})
-Sigma.to_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')'''
-Sigma = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')
+Sigma.to_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')
+'''Sigma = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')'''
 Sigma = Sigma.drop(['Unnamed: 0'], axis = 1)
 Sigma = np.array(Sigma)
 
+#Calculates Probability Field
 Resolution = 150
 
-SItx = np.linspace(np.min(Xin[:,0]), np.max(Xin[:,0]), Resolution)
-Gtx = np.linspace(np.min(Xin[:,1]), np.max(Xin[:,1]), Resolution) 
+SItx = np.linspace(-8.5, -1.5, Resolution)
+Gtx = np.linspace(0.2, 1.4, Resolution)
+SIt1x = np.linspace(-8.5, -1.5, Resolution) 
 PDF = np.zeros([Resolution, Resolution])
-Xinmean = np.mean(Xin, 0)
-'''
+
 for i in range(len(X)):
     PDF = PDF + bivar_norm(SItx, Gtx, i)
     if i % 1000 == 0:
         print(i)
-np.savetxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WX.txt', PDF, delimiter=',')'''
-PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter=',')
+np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X.npy', PDF)
+#PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
 
-SI3D, G3D = np.meshgrid(SItx, Gtx)
-ax = fig.add_subplot(111, projection='3d')
-ax.plot_surface(SI3D, G3D, PDF)
-
-'''plt.figure()
-plt.contour(SItx, Gtx, (PDF), 100)'''
-print(np.sum(PDF)*(np.max(X[:,0])-np.min(X[:,0]))/Resolution*(np.max(X[:,1])-np.min(X[:,1]))/Resolution)
+plt.figure()
+plt.contour(SItx, Gtx, np.log(PDF), 100)
+print(np.sum(PDF)*8.4/Resolution**2)
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')
-
-plt.figure()
-plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
-
-plt.figure()
-plt.plot(Xin[:,0], Xin[:,1], 'kx')
