@@ -75,11 +75,21 @@ W3b = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3Xb.npy')
 
 W2D = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
 W3D = W3a + W3b
-'''W2X = np.load('W2X.npy')
-W3X = np.ones([150,150,150])'''
+W2X = np.load('W2X.npy')
+'''W3X = np.ones([150,150,150])
 scale = (np.max(measured[:,0])-np.min(measured[:,0]))*(np.max(measured[:,1])-np.min(measured[:,1]))*(np.max(measured[:,2])-np.min(measured[:,2]))
-print(Trap3D(W3b))
+print(Trap3D(W3b))'''
 '''print(Trap2D(W2X))'''
+
+fig = plt.figure()
+grid_2D = np.meshgrid(grid_pts[0], grid_pts[1])
+ax = fig.add_subplot(111, projection = '3d')
+ax.plot_surface(grid_2D[0], grid_2D[1], W2X)
+ax.set_xlabel('Sensitivity, SI(t)')
+ax.set_ylabel('Glucose, G(t)')
+
+plt.figure()
+plt.contour(grid_2D[0], grid_2D[1], np.log(W2X), 100)
 
 '''plt.figure()
 plt.plot(grid_pts[2],W3D[105,105,:])   

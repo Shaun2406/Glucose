@@ -76,10 +76,7 @@ if __name__ == '__main__':
     glucData = load_data()
     measured, measured_trf, trf_det, trf = transform(glucData)
     
-    sigma = pd.read_csv('KernelSigma.csv')
-    sigma = sigma.drop(['Unnamed: 0'], axis = 1)
-    sigma = np.array(sigma)
-    
+    sigma = np.load('Sigma.npy')   
     res = 150
     
     grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res)]
@@ -90,8 +87,8 @@ if __name__ == '__main__':
     density_func.fill(0)
     start = time()
     with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw, means, grid_pts, trf, res)) as pool:
-        pool.starmap(bivar_norm, [(measured_trf[i], sigma[i][0]) for i in range(len(measured_trf))])
+        pool.starmap(bivar_norm, [(measured_trf[i], sigma[i]) for i in range(len(measured_trf))])
     print(time() - start)
     density_func = density_func*trf_det
-    #np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X', density_func)
+    np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X', density_func)
     print(Trap2D(density_func))
