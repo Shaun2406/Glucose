@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import scipy.stats
 plt.close("all")
 
 def bivar_norm(x, y, idx):
@@ -60,7 +59,7 @@ X0 = X - Xmean
 Xdec = np.matmul(X0, A)
 
 #Create an Ortho-Normalised Matrix Xindec - 2D
-Xin = GlucData.loc[:,['SIt', 'Gt']].values
+Xin = GlucData.loc[:,['SIt', 'SIt+1']].values
 Cin = np.cov(np.transpose(Xin))
 Rin = np.linalg.cholesky(Cin)
 Ain = np.linalg.inv(np.transpose(Rin))
@@ -69,31 +68,45 @@ Xinmean = np.mean(Xin, 0)
 Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
-#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range
-Radii = np.sort(np.linalg.norm(Xdec, axis = 1))
-R_X = Radii[len(Radii),:]
-R_2X = Radii[np.round(len(Radii/2)),:]
-Xstd = np.std(X,0)
-Xiqr = scipy.stats.iqr(X,0)/1.348
-S_X = np.min([Xstd, Xiqr],0)
-k = len(Xdec)
-M = np.zeros([k,3])
-MB = np.zeros([k,1])
+#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
+Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
+R_X = Rad[len(Rad)-1]
+R_2X = Rad[round(len(Rad)*0.95)]
+X_s = np.std(X,0)
+k = len(X)
+m = np.zeros([k])
+M = np.zeros([k])
+MB = np.zeros([k])
+MC = np.zeros([k])
 for i in range(k):
     if i % 1000 == 0:
         print(i)
-    m = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
-    m = m < k**(-1/6)
-    M[i] = (np.sum(m)*R_X**3*k**(1/2))**(-1/6)
-    MB[i] = (np.sum(m)*R_X**2*k**(1/3))**(-1/6)
-    
-Sigma = pd.DataFrame({'SigASIt': M[:,0], 'SigBGt': M[:,1], 'SigCSIt+1': M[:,2]})
-Sigma.to_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')
-'''Sigma = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\KernelSigma.csv')'''
-Sigma = Sigma.drop(['Unnamed: 0'], axis = 1)
-Sigma = np.array(Sigma)
+    mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
+    mm = mm < k**(-1/6)
+    m[i] = np.sum(mm)
+    M[i] = (m[i]*R_X**3*k**(1/2))**(-1/6)
+    MB[i] = (m[i]*R_X**2*k**(1/3))**(-1/6)
+    MC[i] = (m[i]/0.95*R_2X**3*k**(1/2))**(-1/6)
+#np.save('Sigma', M)
 
-#Calculates Probability Field
+#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
+Radin = np.sort(np.linalg.norm(Xindec, axis = 1))
+R_Xin = Radin[len(Radin)-1]
+X_sin = np.std(Xin,0)
+k = len(Xin)
+m_in = np.zeros([k])
+M_in = np.zeros([k])
+for i in range(k):
+    if i % 1000 == 0:
+        print(i)
+    mm_in = np.linalg.norm(Xindec-Xindec[i,:], axis = 1)
+    mm_in = mm_in < k**(-1/6)
+    m_in[i] = np.sum(mm_in)
+    M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)
+    
+#np.save('Sigma', M)
+
+'''#Calculates Probability Field
 Resolution = 150
 
 SItx = np.linspace(-8.5, -1.5, Resolution)
@@ -112,4 +125,4 @@ plt.figure()
 plt.contour(SItx, Gtx, np.log(PDF), 100)
 print(np.sum(PDF)*8.4/Resolution**2)
 plt.xlabel('Sensitivity SIt')
-plt.ylabel('Glucose Gt')
+plt.ylabel('Glucose Gt')'''

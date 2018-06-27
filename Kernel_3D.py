@@ -90,7 +90,7 @@ if __name__ == '__main__':
     sigma = sigma.drop(['Unnamed: 0'], axis = 1)
     sigma = np.array(sigma)
     
-    res = 500
+    res = 150
     
     grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res), np.linspace(-8.5, -1.5, res)]
     means = np.mean(measured, 0)
