@@ -8,26 +8,31 @@ Non-parallel calculation of probability field, as well as calculation of sigma m
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from time import time
 plt.close("all")
 
 def bivar_norm(x, y, idx):
     #Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
     pdf = np.zeros([len(x), len(y)])
+    x_out = np.zeros([len(x), len(y)])
+    y_out = np.zeros([len(x), len(y)])
     for i in range(len(x)):
         for j in range(len(y)):
             xy = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1]], Ain)
             pdf[j,i] = 1/(2*np.pi*Sigma[idx]**2)*np.exp(-0.5*((xy[0]-Xindec[idx,0])**2+(xy[1]-Xindec[idx,1])**2)/Sigma[idx]**2)*detAin
-    return pdf
+            x_out[j,i] = xy[0]
+            y_out[j,i] = xy[1]
+    return pdf, x_out, y_out
 
-def trivar_norm(x, y, z, idx):
-    #Trivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
-    pdf = np.zeros([len(x), len(y), len(z)])
-    for i in range(len(x)):
-        for j in range(len(y)):
-            for k in range(len(z)):
-                xyz = np.matmul([x[i]-Xmean[0], y[j]-Xmean[1], z[k]-Xmean[2]], A)
-                pdf[j,i,k] = 1/((2*np.pi)**1.5*Sigma[idx]**3)*np.exp(-0.5*((xyz[0]-X[idx,0])**2+(xyz[1]-X[idx,1])**2+(xyz[2]-X[idx,2])**2)/Sigma[idx]**2)*detA
+def bivar_norm_eff(x, y, idx):
+    #Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
+    X_pts = np.argmin(abs(x_out[0,:]-Xindec[idx,0]))
+    Y_pts = np.argmin(abs(y_out-Xindec[idx,1]),0)
+    pdf = np.zeros([len(x), len(y)])
+    for i in range(np.max([X_pts-17,0]),np.min([X_pts+17,150])):
+        for j in range(np.max([Y_pts[i]-17,0]),np.min([Y_pts[i]+17,150])):
+            xy = np.matmul([x[i]-Xinmean[0], y[j]-Xinmean[1]], Ain)
+            pdf[j,i] = 1/(2*np.pi*Sigma[idx]**2)*np.exp(-0.5*((xy[0]-Xindec[idx,0])**2+(xy[1]-Xindec[idx,1])**2)/Sigma[idx]**2)*detAin
     return pdf
 
 def Trap2D(Arr):
@@ -76,61 +81,59 @@ Xinmean = np.mean(Xin, 0)
 Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
-#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
-Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
-R_X = Rad[len(Rad)-1]
-R_2X = Rad[round(len(Rad)*0.95)]
-X_s = np.std(X,0)
-k = len(X)
-m = np.zeros([k])
-M = np.zeros([k])
-MB = np.zeros([k])
-MC = np.zeros([k])
-for i in range(k):
-    if i % 1000 == 0:
-        print(i)
-    mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
-    mm = mm < k**(-1/6)
-    m[i] = np.sum(mm)
-    M[i] = (m[i]*R_X**3*k**(1/2))**(-1/6)
-    MB[i] = (m[i]*R_X**2*k**(1/3))**(-1/6)
-    MC[i] = (m[i]/0.95*R_2X**3*k**(1/2))**(-1/6)
-
-#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
-Radin = np.sort(np.linalg.norm(Xindec, axis = 1))
-R_Xin = Radin[len(Radin)-1]
-X_sin = np.std(Xin,0)
-k = len(Xin)
-m_in = np.zeros([k])
-M_in = np.zeros([k])
-for i in range(k):
-    if i % 1000 == 0:
-        print(i)
-    mm_in = np.linalg.norm(Xindec-Xindec[i,:], axis = 1)
-    mm_in = mm_in < k**(-1/6)
-    m_in[i] = np.sum(mm_in)
-    M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)
-    
-#np.save('Sigma', M)
-Sigma = np.load('Sigma.npy')
-
 #Calculates Probability Field
 Resolution = 150
+Sigma = np.load('Sigma.npy')
 
 SItx = np.linspace(-8.5, -1.5, Resolution)
 Gtx = np.linspace(0.2, 1.4, Resolution)
 SIt1x = np.linspace(-8.5, -1.5, Resolution) 
 PDF = np.zeros([Resolution, Resolution])
 
-'''for i in range(len(X)):
-    PDF = PDF + bivar_norm(SItx, Gtx, i)
-    if i == 1000:
-        print(i)
-np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X.npy', PDF)
-#PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
+i = 24
+_, x_out, y_out = bivar_norm(SItx, Gtx, i)
+
+
+start = time()
+for i in range(100):
+    PDF = PDF + bivar_norm_eff(SItx, Gtx, i)
+'''np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X.npy', PDF)'''
+print(time()-start)
+print(Trap2D(PDF))
+
+'''loc = np.meshgrid(SItx, Gtx)
 
 plt.figure()
-plt.contour(SItx, Gtx, PDF, 100)
-print(Trap2D(PDF))
+plt.contour(loc[0], loc[1], PDF, 100)
+plt.plot(Xin[i,0], Xin[i,1], 'kx')
+
 plt.xlabel('Sensitivity SIt')
-plt.ylabel('Glucose Gt')'''
+plt.ylabel('Glucose Gt')
+
+zero_map = (PDF == 0)
+
+plt.figure()
+plt.contour(x_out, y_out, PDF, 100)
+plt.plot(Xindec[i,0], Xindec[i,1], 'kx')
+plt.xlabel('Sensitivity SIt')
+plt.ylabel('Glucose Gt')
+plt.axis('equal')
+
+plt.figure()
+plt.contourf(x_out, y_out, zero_map, 100)
+plt.plot(Xindec[i,0], Xindec[i,1], 'kx')
+plt.xlabel('Sensitivity SIt')
+plt.ylabel('Glucose Gt')
+plt.axis('equal')
+
+idx = 24
+pdf_1d = np.zeros(150)
+yy = np.linspace(np.min(y_out), np.max(y_out), 150)
+for j in range(150):
+    pdf_1d[j] = 1/(2*np.pi*Sigma[idx]**2)*np.exp(-0.5*((yy[j]-Xindec[idx,1])**2/Sigma[idx]**2))*detAin
+plt.figure()
+plt.plot(yy, pdf_1d)
+
+
+print(X_pts)
+print(Y_pts)'''

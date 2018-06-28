@@ -29,7 +29,7 @@ def Trap3D(Arr):
     edges = edges1+edges2+edges3
     faces = np.sum(Arr[0,1:l,1:l])+np.sum(Arr[1:l,0,1:l])+np.sum(Arr[1:l,1:l,0])+np.sum(Arr[l,1:l,1:l])+np.sum(Arr[1:l,l,1:l])+np.sum(Arr[1:l,1:l,l])
     middle = np.sum(Arr[1:l,1:l,1:l])
-    tot = (middle*8+faces*4+edges*2+corners)/8*scale/(res-1)**3
+    tot = (middle*8+faces*4+edges*2+corners)/8*58.8/(res-1)**3
     return tot
 
 res = 150
@@ -73,9 +73,8 @@ grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res), np.linspac
 W3a = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3Xa.npy')
 W3b = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3Xb.npy')
 
-W2D = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
 W3D = W3a + W3b
-W2X = np.load('W2X.npy')
+W2X = np.load('W2X_smooth.npy')
 '''W3X = np.ones([150,150,150])
 scale = (np.max(measured[:,0])-np.min(measured[:,0]))*(np.max(measured[:,1])-np.min(measured[:,1]))*(np.max(measured[:,2])-np.min(measured[:,2]))
 print(Trap3D(W3b))'''
