@@ -92,7 +92,7 @@ if __name__ == '__main__':
     glucData = load_data()
     measured, measured_trf, trf_det, trf = transform(glucData)
 
-    sigma = np.load('Sigma.npy')   
+    sigma = np.load('Sigma_3D.npy')   
     res = 150
     
     grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res)]

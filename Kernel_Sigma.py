@@ -76,7 +76,7 @@ Xinmean = np.mean(Xin, 0)
 Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
-#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
+'''#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
 Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
 R_X = Rad[len(Rad)-1]
 R_2X = Rad[round(len(Rad)*0.95)]
@@ -109,10 +109,10 @@ for i in range(k):
     mm_in = np.linalg.norm(Xindec-Xindec[i,:], axis = 1)
     mm_in = mm_in < k**(-1/6)
     m_in[i] = np.sum(mm_in)
-    M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)
+    M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)'''
     
 #np.save('Sigma', M)
-Sigma = np.load('Sigma.npy')
+Sigma = np.load('Sigma_3D.npy')
 
 #Calculates Probability Field
 Resolution = 150
@@ -121,7 +121,7 @@ SItx = np.linspace(-8.5, -1.5, Resolution)
 Gtx = np.linspace(0.2, 1.4, Resolution)
 SIt1x = np.linspace(-8.5, -1.5, Resolution) 
 PDF = np.zeros([Resolution, Resolution])
-
+print(np.mean(10**GlucData['SIt+1']))
 '''for i in range(len(X)):
     PDF = PDF + bivar_norm(SItx, Gtx, i)
     if i == 1000:

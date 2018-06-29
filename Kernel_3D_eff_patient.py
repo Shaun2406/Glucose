@@ -131,7 +131,6 @@ if __name__ == '__main__':
         print(time() - start)
         density_func = density_func*trf_det
         np.save('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\Patients\\' + str(Patient), density_func)
-        print(Trap3D(density_func))
         density_func = []
     print('Completed All Patients')
     print(time() - start_all)
