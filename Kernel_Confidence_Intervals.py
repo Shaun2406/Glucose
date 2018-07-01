@@ -7,22 +7,16 @@ Created on Fri Jun  8 12:06:41 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as manimation
-from mpl_toolkits.mplot3d import Axes3D
 import os
+import scipy.integrate
 plt.close("all")
 
-def Trap1D(Arr, xArr):
-    tot = 0
-    for i in range(len(xArr)-1):
-        tot = tot+(Arr[i]+Arr[i+1])/2*(xArr[i+1]-xArr[i])
-    return tot
-
-def Trap1DCum(Arr, xArr):
-    tot = np.zeros(len(Arr))
-    for i in range(len(xArr)-1):
-        tot[i+1] = tot[i]+(Arr[i]+Arr[i+1])/2*(xArr[i+1]-xArr[i])
-    return tot
+def Interpolate(idx, tgt):
+    if linear_prob[idx] < tgt:
+        inter = (tgt - linear_prob[idx])/(linear_prob[idx+1]-linear_prob[idx])*SIt1[idx+2] + (linear_prob[idx+1] - tgt)/(linear_prob[idx+1]-linear_prob[idx])*SIt1[idx+1]
+    else:
+        inter = (linear_prob[idx] - tgt)/(linear_prob[idx]-linear_prob[idx-1])*SIt1[idx] + (tgt - linear_prob[idx-1])/(linear_prob[idx]-linear_prob[idx-1])*SIt1[idx+1]
+    return inter
 
 def Trap2D(Arr):
     l = len(Arr)-1
@@ -71,10 +65,10 @@ SIt_Med = np.zeros([150,150])
 for i in range(150):
     for j in range(150):
         if np.sum(PDF_3D[j,i,:]) != 0:
-            linear_prob = Trap1DCum(PDF_3D[j,i,:], SIt1)/Trap1D(PDF_3D[j,i,:], SIt1)
-            Conf_Int[0][j,i] = SIt1[np.argmin(abs(linear_prob - 0.05))]
-            Conf_Int[1][j,i] = SIt1[np.argmin(abs(linear_prob - 0.95))]
-            SIt_Med[j,i] = SIt1[np.argmin(abs(linear_prob - 0.5))]
+            linear_prob = scipy.integrate.cumtrapz(PDF_3D[j,i,:], SIt1)/np.trapz(PDF_3D[j,i,:], SIt1)
+            Conf_Int[0][j,i] = Interpolate(np.argmin(abs(linear_prob - 0.05)), 0.05)
+            Conf_Int[1][j,i] = Interpolate(np.argmin(abs(linear_prob - 0.95)), 0.95)
+            SIt_Med[j,i] = Interpolate(np.argmin(abs(linear_prob - 0.5)), 0.5)
 Conf_Width = 10**Conf_Int[1] - 10**Conf_Int[0]
 Conf_Exp_Val = Trap2D(Conf_Width*PDF_2D/62589)
 SIt1_Exp_Val = Trap2D(10**SIt_Med*PDF_2D/62589)
@@ -82,3 +76,14 @@ Conf_Up_Val = Trap2D(10**Conf_Int[1]*PDF_2D/62589)
 Conf_Low_Val = Trap2D(10**Conf_Int[0]*PDF_2D/62589)
 print('Expected Confidence Interval width is ' + str(Conf_Exp_Val))
 print('Expected Value of SI(t+1) is ' + str(SIt1_Exp_Val) + ' with lower bound ' + str(Conf_Low_Val) + ' and upper bound ' + str(Conf_Up_Val))
+print('')
+JL_CI = 0.000413051333416
+JL_LB = 0.00022801714853
+JL_UB = 0.000641068481946
+JL_EV = 0.000432574234546
+ExpVal = 0.000426998692708
+
+print('Expected Value of SI(t+1) is ' + str(((JL_EV - ExpVal) - (SIt1_Exp_Val - ExpVal))/(JL_EV - ExpVal)*100) + '% closer')
+print('Confidence Interval is ' + str((JL_CI - Conf_Exp_Val)/(JL_CI)*100) + '% narrower')
+print('Upper Bound is ' + str((JL_UB - Conf_Up_Val)/(JL_UB)*100) + '% lower')
+print('Lower Bound is ' + str((Conf_Low_Val - JL_LB)/(JL_LB)*100) + '% higher')
