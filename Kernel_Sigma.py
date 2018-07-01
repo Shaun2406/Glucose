@@ -39,7 +39,7 @@ def Trap2D(Arr):
     return tot
 
 #LOADING DATA
-GlucData = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\GlucDataOverall.csv')
+GlucData = pd.read_csv('D:\Glucose\GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
@@ -76,7 +76,7 @@ Xinmean = np.mean(Xin, 0)
 Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
-'''#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
+#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
 Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
 R_X = Rad[len(Rad)-1]
 R_2X = Rad[round(len(Rad)*0.95)]
@@ -87,7 +87,7 @@ M = np.zeros([k])
 MB = np.zeros([k])
 MC = np.zeros([k])
 for i in range(k):
-    if i % 1000 == 0:
+    if i % 10000 == 0:
         print(i)
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     mm = mm < k**(-1/6)
@@ -96,7 +96,10 @@ for i in range(k):
     MB[i] = (m[i]*R_X**2*k**(1/3))**(-1/6)
     MC[i] = (m[i]/0.95*R_2X**3*k**(1/2))**(-1/6)
 
-#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
+print(np.mean(MC))
+print(np.mean(m))    
+
+'''#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
 Radin = np.sort(np.linalg.norm(Xindec, axis = 1))
 R_Xin = Radin[len(Radin)-1]
 X_sin = np.std(Xin,0)
@@ -112,7 +115,7 @@ for i in range(k):
     M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)'''
     
 #np.save('Sigma', M)
-Sigma = np.load('Sigma_3D.npy')
+'''Sigma = np.load('Sigma_3D.npy')
 
 #Calculates Probability Field
 Resolution = 150
@@ -121,7 +124,7 @@ SItx = np.linspace(-8.5, -1.5, Resolution)
 Gtx = np.linspace(0.2, 1.4, Resolution)
 SIt1x = np.linspace(-8.5, -1.5, Resolution) 
 PDF = np.zeros([Resolution, Resolution])
-print(np.mean(10**GlucData['SIt+1']))
+print(np.mean(10**GlucData['SIt+1']))'''
 '''for i in range(len(X)):
     PDF = PDF + bivar_norm(SItx, Gtx, i)
     if i == 1000:

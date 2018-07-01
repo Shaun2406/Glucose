@@ -12,6 +12,18 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 plt.close("all")
 
+def Trap1D(Arr, xArr):
+    tot = 0
+    for i in range(len(xArr)-1):
+        tot = tot+(Arr[i]+Arr[i+1])/2*(xArr[i+1]-xArr[i])
+    return tot
+
+def Trap1DCum(Arr, xArr):
+    tot = np.zeros(len(Arr))
+    for i in range(len(xArr)-1):
+        tot[i+1] = tot[i]+(Arr[i]+Arr[i+1])/2*(xArr[i+1]-xArr[i])
+    return tot
+
 def Trap2D(Arr):
     l = len(Arr)-1
     corners = Arr[0,0]+Arr[l,l]+Arr[0,l]+Arr[l,0]
@@ -59,7 +71,7 @@ SIt_Med = np.zeros([150,150])
 for i in range(150):
     for j in range(150):
         if np.sum(PDF_3D[j,i,:]) != 0:
-            linear_prob = np.cumsum(PDF_3D[j,i,:])/np.sum(PDF_3D[j,i,:])
+            linear_prob = Trap1DCum(PDF_3D[j,i,:], SIt1)/Trap1D(PDF_3D[j,i,:], SIt1)
             Conf_Int[0][j,i] = SIt1[np.argmin(abs(linear_prob - 0.05))]
             Conf_Int[1][j,i] = SIt1[np.argmin(abs(linear_prob - 0.95))]
             SIt_Med[j,i] = SIt1[np.argmin(abs(linear_prob - 0.5))]

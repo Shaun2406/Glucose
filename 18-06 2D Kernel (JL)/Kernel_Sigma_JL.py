@@ -13,7 +13,7 @@ import scipy.stats
 plt.close("all")
 
 #LOADING DATA
-GlucData = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\GlucDataOverall.csv')
+GlucData = pd.read_csv('D:\Glucose\GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
@@ -31,18 +31,22 @@ X0 = X - Xmean
 Xdec = np.matmul(X0, A)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
-Rad = np.max(np.linalg.norm(Xdec, axis = 1))
+Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
+Rad = Rad[round(len(Rad)*0.95)]
 X_std = np.std(X,0)
 X_iqr = scipy.stats.iqr(X,0)/1.348
 S_X = np.min([X_std, X_iqr], 0)
 
 k = len(X)
 Sigma = np.zeros([k, 2])
+m = np.zeros(k)
 for i in range(k):
-    if i % 1000 == 0:
+    if i % 10000 == 0:
         print(i)
-    m = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
-    m = m < k**(-1/6)
-    Sigma[i] = (np.sum(m)*Rad**2*k**(1/3))**(-1/6)*S_X
-    
-np.save('Sigma_JL', Sigma)
+    mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
+    mm = mm < k**(-1/6)
+    m[i] = np.sum(mm)
+    Sigma[i] = (m[i]/0.95*Rad**2*k**(1/3))**(-1/6)S_X
+print(np.mean(Sigma))
+print(np.mean(m))    
+#np.save('Sigma_JL', Sigma)
