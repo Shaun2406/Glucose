@@ -2,18 +2,15 @@
 """
 Created on Fri Jun  8 12:06:41 2018
 
-Non-parallel calculation of probability field, as well as calculation of sigma matrix
+Calculation of Sigma matrix for JL kernel method 
 """
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import scipy.stats
-plt.close("all")
 
 #LOADING DATA
-GlucData = pd.read_csv('D:\Glucose\GlucDataOverall.csv')
+GlucData = pd.read_csv('GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
@@ -41,12 +38,12 @@ k = len(X)
 Sigma = np.zeros([k, 2])
 m = np.zeros(k)
 for i in range(k):
-    if i % 10000 == 0:
+    if i % 5000 == 0:
         print(i)
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     mm = mm < k**(-1/6)
     m[i] = np.sum(mm)
-    Sigma[i] = (m[i]/0.95*Rad**2*k**(1/3))**(-1/6)S_X
+    Sigma[i] = (m[i]/0.95*Rad**2*k**(1/3))**(-1/6)*S_X
 print(np.mean(Sigma))
 print(np.mean(m))    
 #np.save('Sigma_JL', Sigma)

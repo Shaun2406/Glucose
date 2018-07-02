@@ -20,16 +20,6 @@ def bivar_norm(x, y, idx):
             pdf[j,i] = 1/(2*np.pi*Sigma[idx]**2)*np.exp(-0.5*((xy[0]-Xindec[idx,0])**2+(xy[1]-Xindec[idx,1])**2)/Sigma[idx]**2)*detAin
     return pdf
 
-def trivar_norm(x, y, z, idx):
-    #Trivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
-    pdf = np.zeros([len(x), len(y), len(z)])
-    for i in range(len(x)):
-        for j in range(len(y)):
-            for k in range(len(z)):
-                xyz = np.matmul([x[i]-Xmean[0], y[j]-Xmean[1], z[k]-Xmean[2]], A)
-                pdf[j,i,k] = 1/((2*np.pi)**1.5*Sigma[idx]**3)*np.exp(-0.5*((xyz[0]-X[idx,0])**2+(xyz[1]-X[idx,1])**2+(xyz[2]-X[idx,2])**2)/Sigma[idx]**2)*detA
-    return pdf
-
 def Trap2D(Arr):
     l = len(Arr)-1
     corners = Arr[0,0]+Arr[l,l]+Arr[0,l]+Arr[l,0]
@@ -78,42 +68,21 @@ Xindec = np.matmul(Xin0, Ain)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
 Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
-R_X = Rad[len(Rad)-1]
-R_2X = Rad[round(len(Rad)*0.95)]
-X_s = np.std(X,0)
+R_X = Rad[round(len(Rad)*0.95)]
 k = len(X)
 m = np.zeros([k])
-M = np.zeros([k])
-MB = np.zeros([k])
-MC = np.zeros([k])
+Sigma = np.zeros([k])
 for i in range(k):
-    if i % 10000 == 0:
+    if i % 5000 == 0:
         print(i)
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     mm = mm < k**(-1/6)
     m[i] = np.sum(mm)
-    M[i] = (m[i]*R_X**3*k**(1/2))**(-1/6)
-    MB[i] = (m[i]*R_X**2*k**(1/3))**(-1/6)
-    MC[i] = (m[i]/0.95*R_2X**3*k**(1/2))**(-1/6)
+    Sigma[i] = (m[i]/0.95*R_X**3*k**(1/2))**(-1/6)
 
-print(np.mean(MC))
+print(np.mean(Sigma))
 print(np.mean(m))    
-
-'''#Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
-Radin = np.sort(np.linalg.norm(Xindec, axis = 1))
-R_Xin = Radin[len(Radin)-1]
-X_sin = np.std(Xin,0)
-k = len(Xin)
-m_in = np.zeros([k])
-M_in = np.zeros([k])
-for i in range(k):
-    if i % 1000 == 0:
-        print(i)
-    mm_in = np.linalg.norm(Xindec-Xindec[i,:], axis = 1)
-    mm_in = mm_in < k**(-1/6)
-    m_in[i] = np.sum(mm_in)
-    M_in[i] = (m_in[i]*R_Xin**2*k**(1/3))**(-1/6)'''
-    
+  
 #np.save('Sigma', M)
 '''Sigma = np.load('Sigma_3D.npy')
 
@@ -130,7 +99,7 @@ print(np.mean(10**GlucData['SIt+1']))'''
     if i == 1000:
         print(i)
 np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X.npy', PDF)
-#PDF = np.loadtxt('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\WXtotal.txt', delimiter = ',')
+#PDF = np.load('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W2X.npy')
 
 plt.figure()
 plt.contour(SItx, Gtx, PDF, 100)

@@ -52,7 +52,7 @@ def Trap2D(Arr, xArr, yArr):
 
 def load_data():
     #Loading and transforming data
-    GlucData = pd.read_csv('D:\\Glucose\\GlucDataOverall.csv')
+    GlucData = pd.read_csv('GlucDataOverall.csv')
     GlucData = GlucData[GlucData['SIt'] > 0]
     GlucData = GlucData[GlucData['SIt+1'] > 0]   
     GlucData = GlucData.reset_index()
@@ -62,9 +62,7 @@ if __name__ == '__main__':
     __spec__ = "ModuleSpec(name='builtins', loader=<class '_frozen_importlib.BuiltinImporter'>)"
     glucData = load_data()
     measured = glucData.loc[:,['SIt', 'SIt+1']].values
-    print(np.mean(measured[:,0]))
-    print(np.mean(measured[:,1]))
-    '''sigma = np.load('Sigma_JL.npy')   
+    sigma = np.load('Sigma_JL.npy')   
     res = 150
     
     grid_pts = [np.logspace(-8.5, -1.5, res), np.logspace(-8.5, -1.5, res)]
@@ -77,8 +75,8 @@ if __name__ == '__main__':
     with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw,  grid_pts, res)) as pool:
         pool.starmap(bivar_norm, [(measured[i], sigma[i,:], X_pts[i], Y_pts[i]) for i in range(len(measured))])
     print(time() - start)
-    np.save('D:\\Glucose\\18-06 2D Kernel (JL)\\PDF_2D_JL_Unscaled', density_func)
+    np.save('PDF_2D_JL_Unscaled', density_func)
     print(Trap2D(density_func, grid_pts[0], grid_pts[1]))
     
     plt.figure()
-    plt.contour(grid_pts[0], grid_pts[1], density_func, 100)'''
+    plt.contour(grid_pts[0], grid_pts[1], density_func, 100)

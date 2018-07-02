@@ -2,7 +2,7 @@
 """
 Created on Fri Jun  8 12:06:41 2018
 
-@author: smd118
+Confidence interval and expected values for JL kernel method
 """
 
 import numpy as np
