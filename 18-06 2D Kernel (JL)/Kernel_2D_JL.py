@@ -23,8 +23,14 @@ def init_worker(lock_, out_, grid_pts_, res_):
     
 def bivar_norm(measured_pt, sigma, X_pts, Y_pts):
     density_func = np.zeros([len(grid_pts[0]), len(grid_pts[1])])
-    for x in range(len(grid_pts[0])):
-        for y in range(len(grid_pts[1])):
+    xlim_up = np.argmin(abs(measured_pt[0]+5*sigma[0]-grid_pts[0])) - X_pts
+    ylim_up = np.argmin(abs(measured_pt[1]+5*sigma[1]-grid_pts[1])) - Y_pts
+    xlim_lw = X_pts - np.argmin(abs(measured_pt[0]-5*sigma[0]-grid_pts[0]))
+    ylim_lw = Y_pts - np.argmin(abs(measured_pt[1]-5*sigma[1]-grid_pts[1]))   
+    for x in range(int(np.max([X_pts-xlim_lw,0])),int(np.min([X_pts+xlim_up,res]))):
+        #y_up = 
+        #y_dn = 
+        for y in range(int(np.max([Y_pts-ylim_lw,0])),int(np.min([Y_pts+ylim_up,res]))):
             density_func[y,x] = 1/(2*np.pi*sigma[0]*sigma[1])*np.exp(-0.5*((grid_pts[0][x]-measured_pt[0])**2/sigma[0]**2+(grid_pts[1][y]-measured_pt[1])**2/sigma[1]**2))
     #density_func = density_func/Trap2D(density_func, grid_pts[0], grid_pts[1])
     out_array = np.frombuffer(out.get_obj()).reshape((res, res))
@@ -79,4 +85,4 @@ if __name__ == '__main__':
     print(Trap2D(density_func, grid_pts[0], grid_pts[1]))
     
     plt.figure()
-    plt.contour(grid_pts[0], grid_pts[1], density_func, 100)
+    plt.contour(grid_pts[0], grid_pts[1], np.log(density_func), 100)

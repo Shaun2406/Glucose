@@ -30,6 +30,7 @@ def centre_pts(grid_pts, measured_trf, means):
     X_pts = np.zeros(len(measured_trf))
     Y_pts = np.zeros([len(measured_trf), len(grid_pts[1])])
     Z_pts = np.zeros([len(measured_trf), len(grid_pts[1]), len(grid_pts[2])])
+    s = time()
     for x in range(len(grid_pts[0])):
         for y in range(len(grid_pts[1])):
             for z in range(len(grid_pts[2])):
@@ -37,10 +38,13 @@ def centre_pts(grid_pts, measured_trf, means):
                 x_out[y,x,z] = xyz[0]
                 y_out[y,x,z] = xyz[1]
                 z_out[y,x,z] = xyz[2]
+    print(time()-s)
+    ss = time()
     for i in range(len(measured_trf)):
         X_pts[i] = np.argmin(abs(x_out[0,:,0]-measured_trf[i,0]))
         Y_pts[i,:] = np.argmin(abs(y_out[:,:,0]-measured_trf[i,1]),0)
         Z_pts[i,:,:] = np.argmin(abs(z_out-measured_trf[i,2]),2)
+    print(time() - ss)    
     return X_pts, Y_pts, Z_pts 
 
 def trivar_norm(measured_pt, sigma, X_pts, Y_pts, Z_pts):
@@ -103,6 +107,7 @@ def transform(glucData):
     detA = np.linalg.det(A)
     X0 = X - np.mean(X, 0)
     Xdec = np.matmul(X0, A)
+    Xdec = Xdec[0:150,:]
     return (X, Xdec, detA, A)
 
 if __name__ == '__main__':
@@ -129,5 +134,5 @@ if __name__ == '__main__':
         pool.starmap(trivar_norm, [(measured_trf[i], sigma[i], X_pts[i], Y_pts[i,:], Z_pts[i,:,:]) for i in range(len(measured_trf))])
     print(time() - start)
     density_func = density_func*trf_det
-    np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3X', density_func)
+    #np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3X', density_func)
     print(Trap3D(density_func))
