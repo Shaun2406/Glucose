@@ -42,7 +42,7 @@ def centre_pts(grid_pts, measured_trf, means):
         X_pts[i] = np.argmin(abs(x_out[0,:]-measured_trf[i,0]))
         Y_pts[i,:] = np.argmin(abs(y_out-measured_trf[i,1]),0)
     print(time() - ss)    
-    return X_pts, Y_pts
+    return X_pts, Y_pts, x_out, y_out
 
 def bivar_norm(measured_pt, sigma, X_pts, Y_pts):
     density_func = np.zeros([len(grid_pts[0]), len(grid_pts[1])])
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res)]
     means = np.mean(measured, 0)
     s = time()
-    X_pts, Y_pts = centre_pts(grid_pts, measured_trf, means)
+    X_pts, Y_pts, X_out, Y_out = centre_pts(grid_pts, measured_trf, means)
     print(time()-s)
     density_func_raw = Array('d', res**2)
     density_func = np.frombuffer(density_func_raw.get_obj()).reshape((res, res))
@@ -122,3 +122,6 @@ if __name__ == '__main__':
     
     plt.figure()
     plt.contour(grid_pts[0], grid_pts[1], np.log(density_func), 100)
+    plt.figure()
+    plt.contour(X_out, Y_out, np.log(density_func), 100)
+    plt.axis('equal')

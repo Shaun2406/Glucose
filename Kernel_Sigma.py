@@ -29,7 +29,7 @@ def Trap2D(Arr):
     return tot
 
 #LOADING DATA
-GlucData = pd.read_csv('D:\Glucose\GlucDataOverall.csv')
+GlucData = pd.read_csv('GlucDataOverall.csv')
 GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
@@ -57,7 +57,7 @@ X0 = X - Xmean
 Xdec = np.matmul(X0, A)
 
 #Create an Ortho-Normalised Matrix Xindec - 2D
-Xin = GlucData.loc[:,['SIt', 'Gt']].values
+Xin = GlucData.loc[:,['SIt', 'SIt+1']].values
 Cin = np.cov(np.transpose(Xin))
 Rin = np.linalg.cholesky(Cin)
 Ain = np.linalg.inv(np.transpose(Rin))
@@ -67,8 +67,9 @@ Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
-Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
+'''Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
 R_X = Rad[round(len(Rad)*0.95)]
+print(R_X)
 k = len(X)
 m = np.zeros([k])
 Sigma = np.zeros([k])
@@ -81,7 +82,7 @@ for i in range(k):
     Sigma[i] = (m[i]/0.95*R_X**3*k**(1/2))**(-1/6)
 
 print(np.mean(Sigma))
-print(np.mean(m))    
+print(np.mean(m))    '''
   
 #np.save('Sigma', M)
 '''Sigma = np.load('Sigma_3D.npy')
@@ -106,3 +107,14 @@ plt.contour(SItx, Gtx, PDF, 100)
 print(Trap2D(PDF))
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')'''
+
+plt.figure()
+plt.plot(Xin[:,0], Xin[:,1], 'kx')
+plt.xlabel('Log Sensitivity, SI(t)')
+plt.ylabel('Log Sensitivity, SI(t+1)')
+
+plt.figure()
+plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
+plt.axis('equal')
+plt.xlabel('Transformed X')
+plt.ylabel('Transformed Y')

@@ -29,6 +29,7 @@ Xdec = np.matmul(X0, A)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 2D
 Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
+print(Rad[len(Rad)-1])
 Rad = Rad[round(len(Rad)*0.95)]
 X_std = np.std(X,0)
 X_iqr = scipy.stats.iqr(X,0)/1.348
@@ -43,7 +44,7 @@ for i in range(k):
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     mm = mm < k**(-1/6)
     m[i] = np.sum(mm)
-    Sigma[i] = (m[i]/0.95*Rad**2*k**(1/3))**(-1/6)*S_X
+    Sigma[i] = (m[i]/0.95*Rad**2*k**(1/3))**(-1/6) #*S_X
 print(np.mean(Sigma))
 print(np.mean(m))    
 #np.save('Sigma_JL', Sigma)
