@@ -22,7 +22,10 @@ features = ['Gt', 'Gt-1', 'Gt-2', 'Pt', 'Pt-1', 'Pt-2', 'SIt', 'SIt-1', 'SIt-2',
 features = ['SIt', 'Gt']
 target = ['SIt+1']
 
-GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
+GlucData = GlucData[GlucData['t'] > 24*60]
+
+print(len(GlucData)/65269*100)
+'''GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
 GlucData = GlucData[np.isnan(GlucData['SIt+1']) == 0]
 
 GlucData['SIt'] = np.log10(GlucData['SIt'])
@@ -33,7 +36,7 @@ GlucData = GlucData[np.isnan(GlucData['SIt-1']) == 0]
 
 GlucData['SIt-2'] = np.log10(GlucData['SIt-2'])
 GlucData = GlucData[np.isnan(GlucData['SIt-2']) == 0]
-GlucData = GlucData.reset_index()
+GlucData = GlucData.reset_index()'''
 
 #HISTOGRAMS
 '''

@@ -53,3 +53,5 @@ Conf_Up_Val = np.trapz(Conf_Int[1]*PDF_1D/62589, SIt)
 Conf_Low_Val = np.trapz(Conf_Int[0]*PDF_1D/62589, SIt)
 print('Expected Confidence Interval width is ' + str(Conf_Exp_Val))
 print('Expected Value of SI(t+1) is ' + str(SIt1_Exp_Val) + ' with lower bound ' + str(Conf_Low_Val) + ' and upper bound ' + str(Conf_Up_Val))
+
+np.save('Conf_Width_JL', Conf_Width)

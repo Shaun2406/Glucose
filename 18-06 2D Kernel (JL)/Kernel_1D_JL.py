@@ -25,7 +25,7 @@ def var_norm(measured_pt, sigma):
     density_func = np.zeros(len(grid_pts))
     for x in range(len(grid_pts)):
         density_func[x] = 1/(np.sqrt(2*np.pi)*sigma)*np.exp(-0.5*((grid_pts[x]-measured_pt)**2/sigma**2))
-    density_func = density_func/np.trapz(density_func, grid_pts)
+    #density_func = density_func/np.trapz(density_func, grid_pts)
     out_array = np.frombuffer(out.get_obj()).reshape(res)
     lock.acquire()
     try:
@@ -57,5 +57,7 @@ if __name__ == '__main__':
     with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw,  grid_pts, res)) as pool:
         pool.starmap(var_norm, [(measured[i,0], sigma[i,0]) for i in range(len(measured))])
     print(time() - start)
-    #np.save('D:\\Glucose\\18-06 2D Kernel (JL)\\PDF_1D_JL', density_func)
+    np.insert(density_func, 0, 0)
+    density_func = density_func/np.trapz(density_func, grid_pts)*62589
+    np.save('PDF_1D_JL', density_func)
     print(np.trapz(density_func, grid_pts))

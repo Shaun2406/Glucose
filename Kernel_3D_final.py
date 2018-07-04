@@ -118,7 +118,7 @@ if __name__ == '__main__':
     
     sigma = np.load('Sigma_3D.npy')
     
-    res = 150
+    res = 250
     
     lims = np.zeros(3)
     lims[0] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[0] - np.matmul([-8.5, 0.2, -1.5], trf)[0])

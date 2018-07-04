@@ -8,6 +8,7 @@ Created on Fri Jun  8 12:06:41 2018
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from mpl_toolkits.mplot3d import Axes3D
 import scipy.integrate
 plt.close("all")
 
@@ -49,6 +50,10 @@ Resolution = 150
 #Loads pre-summed probability fields
 PDF_2D = np.load('PDF_2D_smooth.npy')
 PDF_3D = np.load('PDF_3D.npy')
+Conf_Int_JL = np.load('Conf_Int_JL.npy')
+Conf_Width_JL = np.load('Conf_Width_JL.npy')
+PDF_1D = np.load('PDF_1D_JL.npy')
+
 
 print('Percentage Error in 2D is ' + str((Trap2D(PDF_2D)-62589)/62589*100) + '%')
 print('Percentage Error in 3D is ' + str((Trap3D(PDF_3D)-62589)/62589*100) + '%')
@@ -87,3 +92,42 @@ print('Expected Value of SI(t+1) is ' + str(((JL_EV - ExpVal) - (SIt1_Exp_Val - 
 print('Confidence Interval is ' + str((JL_CI - Conf_Exp_Val)/(JL_CI)*100) + '% narrower')
 print('Upper Bound is ' + str((JL_UB - Conf_Up_Val)/(JL_UB)*100) + '% lower')
 print('Lower Bound is ' + str((Conf_Low_Val - JL_LB)/(JL_LB)*100) + '% higher')
+
+for i in range(150):
+    if PDF_1D[i] < 10 :
+        Conf_Int_JL[1][i] = np.nan
+    for j in range(150):
+        if PDF_2D[j,i] < 10:
+            Conf_Int[1][j,i] = np.nan
+
+IWINMASK = Conf_Width < Conf_Width_JL*np.ones([150,150])
+IWINMASK = IWINMASK*Conf_Width*PDF_2D/Trap2D(IWINMASK*PDF_2D)
+print(Trap2D(IWINMASK))
+
+ILOSEMASK = Conf_Width < Conf_Width_JL*np.ones([150,150])
+ILOSEMASK = ILOSEMASK*Conf_Width_JL*np.ones([150,150])*PDF_2D/Trap2D(ILOSEMASK*PDF_2D)
+print(Trap2D(ILOSEMASK))
+
+IWIN = Conf_Width < Conf_Width_JL*np.ones([150,150])
+IWIN = IWIN*PDF_2D
+IWIN = Trap2D(IWIN)
+
+ILOSE = Conf_Width > Conf_Width_JL*np.ones([150,150])
+ILOSE = ILOSE*PDF_2D
+ILOSE = Trap2D(ILOSE)
+
+print(IWIN)
+print(ILOSE)
+
+
+
+fig = plt.figure()
+SIt2D, Gt2D = np.meshgrid(SIt, Gt)
+plt.contour(SIt2D, Gt2D, Conf_Width < Conf_Width_JL*np.ones([150,150]))
+
+fig = plt.figure()
+SIt2D, Gt2D = np.meshgrid(SIt, Gt)
+plt.contour(SIt2D, Gt2D, Conf_Width > Conf_Width_JL*np.ones([150,150]))
+#ax.plot_surface(SIt2D, Gt2D, , color = 'b')
+#ax.set_xlabel('Sensitivity, SI(t)')
+#ax.set_ylabel('Glucose, G(t)')
