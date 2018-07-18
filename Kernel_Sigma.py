@@ -67,8 +67,8 @@ Xin0 = Xin - Xinmean
 Xindec = np.matmul(Xin0, Ain)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
-'''Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
-R_X = Rad[round(len(Rad)*0.95)]
+Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
+R_X = Rad[round(len(Rad)*0.99)]
 print(R_X)
 k = len(X)
 m = np.zeros([k])
@@ -77,17 +77,20 @@ for i in range(k):
     if i % 5000 == 0:
         print(i)
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
-    mm = mm < k**(-1/6)
+    mm = mm < k**(-1/7)
     m[i] = np.sum(mm)
-    Sigma[i] = (m[i]/0.95*R_X**3*k**(1/2))**(-1/6)
+    Sigma[i] = 0.8**(1/7)*(m[i]/0.99*R_X**3*k**(3/7))**(-1/7)
 
 print(np.mean(Sigma))
-print(np.mean(m))    '''
+print(np.mean(m))
   
-#np.save('Sigma', M)
-'''Sigma = np.load('Sigma_3D.npy')
+np.save('Sigma', Sigma)
+Sigma_Old = np.load('Sigma_3D_Old.npy')
 
-#Calculates Probability Field
+print(np.mean(Sigma))
+print(np.mean(Sigma_Old))
+
+'''#Calculates Probability Field
 Resolution = 150
 
 SItx = np.linspace(-8.5, -1.5, Resolution)
@@ -108,13 +111,13 @@ print(Trap2D(PDF))
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')'''
 
-plt.figure()
-plt.plot(Xin[:,0], Xin[:,1], 'kx')
-plt.xlabel('Log Sensitivity, SI(t)')
-plt.ylabel('Log Sensitivity, SI(t+1)')
+#plt.figure()
+#plt.plot(Xin[:,0], Xin[:,1], 'kx')
+#plt.xlabel('Log Sensitivity, SI(t)')
+#plt.ylabel('Log Sensitivity, SI(t+1)')
 
-plt.figure()
-plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
-plt.axis('equal')
-plt.xlabel('Transformed X')
-plt.ylabel('Transformed Y')
+#plt.figure()
+#plt.plot(Xindec[:,0], Xindec[:,1], 'kx')
+#plt.axis('equal')
+#plt.xlabel('Transformed X')
+#plt.ylabel('Transformed Y')
