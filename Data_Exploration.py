@@ -15,16 +15,15 @@ plt.close("all")
 
 
 GlucData = pd.read_csv('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\GlucDataOverall.csv')
-GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
+#GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
 features = ['Gt', 'Gt-1', 'Gt-2', 'Pt', 'Pt-1', 'Pt-2', 'SIt', 'SIt-1', 'SIt-2', 'ut', 'ut-1', 'ut-2']
 features = ['SIt', 'Gt']
 target = ['SIt+1']
 
-GlucData = GlucData[GlucData['t'] > 24*60]
 
-print(len(GlucData)/65269*100)
+
 '''GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
 GlucData = GlucData[np.isnan(GlucData['SIt+1']) == 0]
 
@@ -116,4 +115,5 @@ ax = fig.add_subplot(111, projection='3d')
 plt.plot(GlucData['SIt'], GlucData['Gt'], GlucData['SIt+1'], 'kx')
 plt.xlabel('Sensitivity SIt')
 plt.ylabel('Glucose Gt')
-    
+   
+grouped = GlucData.groupby('Patient')

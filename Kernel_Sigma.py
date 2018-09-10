@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 plt.close("all")
 
+Output = 3
+
 def bivar_norm(x, y, idx):
     #Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
     pdf = np.zeros([len(x), len(y)])
@@ -29,25 +31,17 @@ def Trap2D(Arr):
     return tot
 
 #LOADING DATA
-GlucData = pd.read_csv('GlucDataOverall.csv')
-GlucData = GlucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
+GlucData = pd.read_csv('GlucData3H_Overall.csv')
+GlucData = GlucData.drop(['Unnamed: 0',  'Operative', 'Patient', 't0', 'GF'], axis = 1)
 GlucData['Gender'] = GlucData['Gender'] == 'female'
 GlucData['Gender'] = GlucData['Gender'].astype(int)
-features = ['SIt', 'Gt']
-target = ['SIt+1']
-
-#LOGGING RELEVANT DATA
 GlucData = GlucData[GlucData['SIt'] > 0]
 GlucData = GlucData[GlucData['SIt+1'] > 0]
-
-GlucData['Gt'] = np.log10(GlucData['Gt'])
-GlucData['SIt+1'] = np.log10(GlucData['SIt+1'])
-GlucData['SIt'] = np.log10(GlucData['SIt'])
-
-GlucData = GlucData.reset_index()
+GlucData = GlucData[GlucData['SIt+2'] > 0]
+GlucData = GlucData[GlucData['SIt+3'] > 0]
 
 #Create an Ortho-Normalised Matrix Xdec - 3D
-X = GlucData.loc[:, ['SIt', 'Gt', 'SIt+1']].values
+X = GlucData.loc[:, ['SIt', 'Gt', 'SIt+' + str(Output)]].values
 C = np.cov(np.transpose(X))
 R = np.linalg.cholesky(C)
 A = np.linalg.inv(np.transpose(R))
@@ -57,7 +51,7 @@ X0 = X - Xmean
 Xdec = np.matmul(X0, A)
 
 #Create an Ortho-Normalised Matrix Xindec - 2D
-Xin = GlucData.loc[:,['SIt', 'SIt+1']].values
+Xin = GlucData.loc[:,['SIt', 'SIt+' + str(Output)]].values
 Cin = np.cov(np.transpose(Xin))
 Rin = np.linalg.cholesky(Cin)
 Ain = np.linalg.inv(np.transpose(Rin))
@@ -68,7 +62,7 @@ Xindec = np.matmul(Xin0, Ain)
 
 #Scaling Factors from Root Matrix (X), Standard Deviation and Max Range - 3D
 Rad = np.sort(np.linalg.norm(Xdec, axis = 1))
-R_X = Rad[round(len(Rad)*0.99)]
+R_X = Rad[round(len(Rad)*0.999)]
 print(R_X)
 k = len(X)
 m = np.zeros([k])
@@ -79,16 +73,16 @@ for i in range(k):
     mm = np.linalg.norm(Xdec-Xdec[i,:], axis = 1)
     mm = mm < k**(-1/7)
     m[i] = np.sum(mm)
-    Sigma[i] = 0.8**(1/7)*(m[i]/0.99*R_X**3*k**(3/7))**(-1/7)
+    Sigma[i] = 0.8**(1/7)*(m[i]/0.999*R_X**3*k**(3/7))**(-1/7)
 
 print(np.mean(Sigma))
 print(np.mean(m))
   
-np.save('Sigma', Sigma)
-Sigma_Old = np.load('Sigma_3D_Old.npy')
+np.save('Sigma_3D_' + str(Output) + 'H', Sigma)
+#Sigma_Old = np.load('Sigma_3D_Old.npy')
 
 print(np.mean(Sigma))
-print(np.mean(Sigma_Old))
+#print(np.mean(Sigma_Old))
 
 '''#Calculates Probability Field
 Resolution = 150

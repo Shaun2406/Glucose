@@ -12,6 +12,8 @@ from multiprocessing import Pool, Lock, Array
 
 NUM_THREADS = 8
 
+Output = 1
+
 def init_worker(lock_, out_, means_, grid_pts_, trf_, res_, lims_, x_out_, y_out_, z_out_):
     global lock, out, means, grid_pts, trf, res, lims, x_out, y_out, z_out
     lock = lock_
@@ -56,13 +58,17 @@ def trivar_norm(measured_pt, sigma):
     
     for x in range(int(np.max([x_pts-xlim,0])),int(np.min([x_pts+xlim,res]))):
         ydist = np.ceil(ylim*np.sqrt(1-((x-x_pts)/xlim)**2))
+        x_in = np.matmul([grid_pts[0][x]-means[0], 0, 0], trf)
+        x_comp = 1/((2*np.pi)**1.5*sigma**3)*np.exp(-0.5*((x_in[0]-measured_pt[0])/sigma)**2)
         for y in range(int(np.max([y_pts[x]-ydist, 0])),int(np.min([y_pts[x]+ydist, res]))):
             zdist = np.ceil(zlim*np.sqrt(1-((y-y_pts[x])/ylim)**2-((x-x_pts)/xlim)**2))
+            y_in = np.matmul([grid_pts[0][x]-means[0], grid_pts[1][y]-means[1], 0], trf)
+            y_comp = np.exp(-0.5*((y_in[1]-measured_pt[1])/sigma)**2)           
             if np.isnan(zdist) == 1:
                 zdist = 1
             for z in range(int(np.max([z_pts[y,x]-zdist, 0])),int(np.min([z_pts[y,x]+zdist, res]))):
-                xyz = np.matmul([grid_pts[0][x]-means[0], grid_pts[1][y]-means[1], grid_pts[2][z]-means[2]], trf)
-                density_func[y,x,z] = 1/((2*np.pi)**1.5*sigma**3)*np.exp(-0.5*((xyz[0]-measured_pt[0])**2+(xyz[1]-measured_pt[1])**2+(xyz[2]-measured_pt[2])**2)/sigma**2)
+                z_in = np.matmul([grid_pts[0][x]-means[0], grid_pts[1][y]-means[1], grid_pts[2][z]-means[2]], trf)
+                density_func[y,x,z] = x_comp*y_comp*np.exp(-0.5*((z_in[2]-measured_pt[2])/sigma)**2)
     out_array = np.frombuffer(out.get_obj()).reshape((res, res, res))
     lock.acquire()
     try:
@@ -84,25 +90,27 @@ def Trap3D(Arr):
 
 def load_data():
     #LOADING DATA
-    glucData = pd.read_csv('GlucDataOverall.csv')
-    glucData = glucData.drop(['Unnamed: 0', 'Unnamed: 0.1', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
+    glucData = pd.read_csv('GlucData3H_Overall.csv')
+    glucData = glucData.drop(['Unnamed: 0', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
     glucData['Gender'] = glucData['Gender'] == 'female'
     glucData['Gender'] = glucData['Gender'].astype(int)
     
     #LOGGING RELEVANT DATA
     glucData = glucData[glucData['SIt'] > 0]
     glucData = glucData[glucData['SIt+1'] > 0]
+    glucData = glucData[glucData['SIt+2'] > 0]
+    glucData = glucData[glucData['SIt+3'] > 0]
     
     glucData['Gt'] = np.log10(glucData['Gt'])
-    glucData['SIt+1'] = np.log10(glucData['SIt+1'])
     glucData['SIt'] = np.log10(glucData['SIt'])
+    glucData['SIt+' + str(Output)] = np.log10(glucData['SIt+' + str(Output)])
     
     glucData = glucData.reset_index()
     return glucData
 
 def transform(glucData):
     '''Create an Ortho-Normalised Matrix Xdec - 2D, for w(x)'''
-    X = glucData.loc[:,['SIt', 'Gt', 'SIt+1']].values
+    X = glucData.loc[:,['SIt', 'Gt', 'SIt+' + str(Output)]].values
     C = np.cov(np.transpose(X))
     R = np.linalg.cholesky(C)
     A = np.linalg.inv(np.transpose(R))
@@ -116,9 +124,9 @@ if __name__ == '__main__':
     glucData = load_data()
     measured, measured_trf, trf_det, trf = transform(glucData)
     
-    sigma = np.load('Sigma_3D.npy')
+    sigma = np.load('Sigma_3D_' + str(Output) + 'H.npy')
     
-    res = 150
+    res = 300
     
     lims = np.zeros(3)
     lims[0] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[0] - np.matmul([-8.5, 0.2, -1.5], trf)[0])
@@ -138,5 +146,5 @@ if __name__ == '__main__':
         pool.starmap(trivar_norm, [(measured_trf[i], sigma[i]) for i in range(len(measured_trf))])
     print(time() - start)
     density_func = density_func*trf_det
-    #np.save('C:\WinPython-64bit-3.5.4.1Qt5\Glucose\W3X', density_func)
+    np.save('PDF_3D_' + str(Output) + 'H', density_func)
     print(Trap3D(density_func))

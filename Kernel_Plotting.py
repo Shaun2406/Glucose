@@ -32,7 +32,7 @@ def Trap3D(Arr):
     tot = (middle*8+faces*4+edges*2+corners)/8*58.8/(Resolution-1)**3
     return tot
 
-Resolution = 150
+Resolution = 250
 
 #Loads and sums all patient specific probability fields
 #PDF = np.zeros([Resolution, Resolution, Resolution])
@@ -41,7 +41,7 @@ Resolution = 150
 #        PDF = PDF + np.load(subdir + "\\" + file)
 
 #Loads pre-summed probability fields
-PDF_2D = np.load('PDF_2D_smooth.npy')
+PDF_2D = np.load('PDF_2D.npy')
 PDF_3D = np.load('PDF_3D.npy')
 
 print('Percentage Error in 2D is ' + str((Trap2D(PDF_2D)-62589)/62589*100) + ' %')
@@ -67,18 +67,19 @@ plt.xlabel('Sensitivity, SI(t)')
 plt.ylabel('Glucose, G(t)')
 
 #Video Writer
-'''FFMpegWriter = manimation.writers['ffmpeg']
+FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Contour_Plot_3D', artist='Shaun Davidson',
                 comment='3D Kernel Field Plot')
 writer = FFMpegWriter(fps=15, metadata=metadata)
 
 fig = plt.figure()
-with writer.saving(fig, "3D_Contours_Normal.mp4", 150):
-    for i in range(150):
+with writer.saving(fig, "3D_Contours_Normal.mp4", 250):
+    for i in range(250):
         plt.contour(SIt, Gt, (PDF_3D[:,:,i]), 100)
         writer.grab_frame()
-        plt.gcf().clear()'''
+        plt.gcf().clear()
 
+'''
 #Plots Projections of the 3D Kernel Field onto 2D Planes        
 plt.figure()
 plt.contour(Gt, SIt1, np.sum(PDF_3D, 0), 100)
@@ -93,4 +94,4 @@ plt.ylabel('Sensitivity, SI(t+1)')
 plt.figure()
 plt.contour(SIt, Gt, np.sum(PDF_3D, 2), 100)
 plt.xlabel('Sensitivity, SI(t)')
-plt.ylabel('Glucose, G(t)')  
+plt.ylabel('Glucose, G(t)')'''
