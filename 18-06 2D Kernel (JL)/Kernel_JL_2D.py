@@ -75,7 +75,7 @@ if __name__ == '__main__':
     glucData = load_data()
     measured = glucData.loc[:,['SIt', 'SIt+' + str(Output)]].values
     sigma = np.load('Sigma_JL_' + str(Output) + 'H.npy')   
-    res = 500
+    res = 400
     
     grid_pts = [np.linspace(0, 0.016, res), np.linspace(0, 0.016, res)]
     X_pts, Y_pts = centre_pts(grid_pts, measured)

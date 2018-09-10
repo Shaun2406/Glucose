@@ -36,11 +36,12 @@ def Interpolate(idx, tgt):
             inter = f*grid_pts[idx+1] + (1-f)*grid_pts[idx+2]
     return inter
 
-res = 500
+res = 400
+
+Output = 3
 
 #Loads pre-summed probability fields
-PDF_2D = np.load('PDF_2D_JL.npy')
-PDF_1D = np.load('PDF_1D_JL.npy')
+PDF_2D = np.load('PDF_JL_' + str(Output) + 'H.npy')
 
 #Dimensions of variables
 grid_pts = np.linspace(0, 0.016, res)
@@ -57,28 +58,10 @@ for i in range(res):
             Conf_Int[1][i] = Interpolate(np.argmin(abs(linear_prob - 0.95)), 0.95)
             SIt_Med[i] = Interpolate(np.argmin(abs(linear_prob - 0.5)), 0.5)
 Conf_Width = Conf_Int[1] - Conf_Int[0]
-Conf_Exp_Val = np.trapz(Conf_Width*PDF_1D/62589, grid_pts)
-SIt1_Exp_Val = np.trapz(SIt_Med*PDF_1D/62589, grid_pts)
-Conf_Up_Val = np.trapz(Conf_Int[1]*PDF_1D/62589, grid_pts)
-Conf_Low_Val = np.trapz(Conf_Int[0]*PDF_1D/62589, grid_pts)
-print('Expected Confidence Interval width is ' + str(Conf_Exp_Val))
-print('Expected Value of SI(t+1) is ' + str(SIt1_Exp_Val) + ' with lower bound ' + str(Conf_Low_Val) + ' and upper bound ' + str(Conf_Up_Val))
+Conf_Table = np.transpose(np.vstack([grid_pts, Conf_Int[0][:], Conf_Int[1][:]]))
 
-np.save('JL_Conf_Width', Conf_Width)
-np.save('JL_Conf_Int', Conf_Int)
+np.savetxt('Conf_Table_JL_' + str(Output) + 'H', Conf_Table, delimiter=",")
 
-Conf_JL = [0,0]
-res = 300
-Gt = np.linspace(0.2, 1.4, res)
-grid_pts = np.linspace(-8.5, -1.5, res)
-
-Conf_Width_JL = np.transpose(Conf_Int[0])*np.ones([500,500])
-JL_Conf = scipy.interpolate.interp2d(np.linspace(0, 0.016, 500), np.linspace(10**0.2, 10**1.4, 500), Conf_Width_JL)
-Conf_JL[0] = JL_Conf.__call__(10**grid_pts, 10**Gt)
-
-Conf_Width_JL = np.transpose(Conf_Int[1])*np.ones([500,500])
-JL_Conf = scipy.interpolate.interp2d(np.linspace(0, 0.016, 500), np.linspace(10**0.2, 10**1.4, 500), Conf_Width_JL)
-Conf_JL[1] = JL_Conf.__call__(10**grid_pts, 10**Gt)
-
-np.savetxt("Conf_LB_JL", Conf_JL[0], delimiter=",")
-np.savetxt("Conf_UB_JL", Conf_JL[1], delimiter=",")
+fig = plt.figure()
+plt.plot(grid_pts, np.log(Conf_Width))
+plt.xlabel('Sensitivity, SI(t)')
