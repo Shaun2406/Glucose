@@ -10,6 +10,8 @@ import scipy.integrate
 
 Output = 3
 
+Prob = 0.5
+
 def Interpolate(idx, tgt):
     if linear_prob[idx] < tgt:
         if linear_prob[idx+1] != linear_prob[idx]:
@@ -36,13 +38,16 @@ ab_points = np.zeros([0,3])
 ib_points = np.zeros([0,3])
 bl_points = np.zeros([0,3])
 
+plow = (1-Prob)/2
+phigh = 1 - plow
+
 for j in range(5):
     
     res = 500
     
     grid_pts = np.linspace(0, 0.016, res)
-    conf_ints = np.load('..//CV Results//PDF_JL_'  + str(Output) + 'H_' + str(j+1) + '.npy')
-    test_pts = np.load('..//CV Results//TEST_JL_' + str(Output) + 'H_' + str(j+1) + '.npy')
+    conf_ints = np.load('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\18-06 2D Kernel (JL)\\CV Results\\PDF_JL_'  + str(Output) + 'H_' + str(j+1) + '.npy')
+    test_pts = np.load('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\18-06 2D Kernel (JL)\\CV Results\\TEST_JL_' + str(Output) + 'H_' + str(j+1) + '.npy')
     Conf_Int = [0, 0]
     Conf_Int[0] = np.zeros(len(test_pts))
     Conf_Int[1] = np.zeros(len(test_pts))
@@ -51,8 +56,8 @@ for j in range(5):
     bl_bounds = np.zeros(len(test_pts))
     for i in range(len(test_pts)):
         linear_prob = scipy.integrate.cumtrapz(conf_ints[i,:], grid_pts)/np.trapz(conf_ints[i,:], grid_pts)
-        Conf_Int[0][i] = Interpolate(np.argmin(abs(linear_prob - 0.05)), 0.05)
-        Conf_Int[1][i] = Interpolate(np.argmin(abs(linear_prob - 0.95)), 0.95)
+        Conf_Int[0][i] = Interpolate(np.argmin(abs(linear_prob - plow)), plow)
+        Conf_Int[1][i] = Interpolate(np.argmin(abs(linear_prob - phigh)), phigh)
         if test_pts[i,1] > Conf_Int[0][i] and test_pts[i,1] < Conf_Int[1][i]:
             in_bounds[i] = 1
         elif test_pts[i,1] < Conf_Int[0][i]:
@@ -70,9 +75,9 @@ for j in range(5):
     #bl_points = np.append(bl_points, test_pts[bl_bounds == 1], 0)
     
 print('Overall Results')
-print(str("%.2f" % (np.sum(ib)/np.sum(ln)*100)) + '% of points within 90% confidence interval')  
-print(str("%.2f" % (np.sum(ab)/np.sum(ln)*100)) + '% of points above 90% confidence interval') 
-print(str("%.2f" % (np.sum(bb)/np.sum(ln)*100)) + '% of points below 90% confidence interval')
+print(str("%.2f" % (np.sum(ib)/np.sum(ln)*100)) + '% of points within ' + str(100*Prob) + '% confidence interval')  
+print(str("%.2f" % (np.sum(ab)/np.sum(ln)*100)) + '% of points above ' + str(100*Prob) + '% confidence interval') 
+print(str("%.2f" % (np.sum(bb)/np.sum(ln)*100)) + '% of points below ' + str(100*Prob) + '% confidence interval')
 
 #np.savetxt("2D_Above", ab_points, delimiter=",")
 #np.savetxt("2D_Below", bl_points, delimiter=",")

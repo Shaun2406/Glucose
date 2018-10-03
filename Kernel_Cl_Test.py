@@ -12,7 +12,9 @@ import pandas as pd
 plt.close("all")
 
 
-Output = 1
+Output = 2
+
+Prob = 0.9
 
 def Interpolate(idx, tgt):
     if linear_prob[idx] < tgt:
@@ -57,8 +59,9 @@ def Locate_Target(idx, tgt):
         inter = f*(idx-1) + (1-f)*idx
     return inter
    
-test_length = 62589
-
+test_length = 62078
+plow = (1-Prob)/2
+phigh = 1 - plow
 ab = np.zeros(5)
 ib = np.zeros(5)
 bb = np.zeros(5)
@@ -76,8 +79,8 @@ for j in range(5):
     res = 300
     
     grid_pts = np.linspace(-8.5, -1.5, res)
-    conf_ints = np.load('..//CV Results//PDF_3D_' + str(Output) + 'H_' + str(j+1) + '.npy')
-    test_pts = np.load('..//CV Results//TEST_3D_' + str(Output) + 'H_' + str(j+1) + '.npy')
+    conf_ints = np.load('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\CV Results\\PDF_3D_' + str(Output) + 'H_' + str(j+1) + '.npy')
+    test_pts = np.load('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\CV Results\\TEST_3D_' + str(Output) + 'H_' + str(j+1) + '.npy')
     Conf_Int = [0, 0]
 
     Conf_Int[0] = np.zeros(len(test_pts))
@@ -89,10 +92,10 @@ for j in range(5):
     for i in range(len(test_pts)):
         q = q+1
         linear_prob = scipy.integrate.cumtrapz(conf_ints[i,:], grid_pts)/np.trapz(conf_ints[i,:], grid_pts)
-        Conf_Int[0][i] = Interpolate(np.argmin(abs(linear_prob - 0.05)), 0.05)
-        Conf_Int[1][i] = Interpolate(np.argmin(abs(linear_prob - 0.95)), 0.95)
-        Cell_Loc[0][q] = Interpolate_Grid(np.argmin(abs(linear_prob - 0.05)), 0.05)
-        Cell_Loc[1][q] = Interpolate_Grid(np.argmin(abs(linear_prob - 0.95)), 0.95)
+        Conf_Int[0][i] = Interpolate(np.argmin(abs(linear_prob - plow)), plow)
+        Conf_Int[1][i] = Interpolate(np.argmin(abs(linear_prob - phigh)), phigh)
+        Cell_Loc[0][q] = Interpolate_Grid(np.argmin(abs(linear_prob - plow)), plow)
+        Cell_Loc[1][q] = Interpolate_Grid(np.argmin(abs(linear_prob - phigh)), phigh)
         CI_Loc[q] = Locate_Target(np.argmin(abs(grid_pts-test_pts[i,2])), test_pts[i,2])
         if 10**test_pts[i,2] >= 10**Conf_Int[0][i] and 10**test_pts[i,2] <= 10**Conf_Int[1][i]:
             in_bounds[i] = 1
@@ -111,9 +114,9 @@ for j in range(5):
     bl_points = np.append(bl_points, test_pts[bl_bounds == 1], 0)
     
 print('Overall Results')
-print(str("%.2f" % (np.sum(ib)/np.sum(ln)*100)) + '% of points within 90% confidence interval')  
-print(str("%.2f" % (np.sum(ab)/np.sum(ln)*100)) + '% of points above 90% confidence interval') 
-print(str("%.2f" % (np.sum(bb)/np.sum(ln)*100)) + '% of points below 90% confidence interval')
+print(str("%.2f" % (np.sum(ib)/np.sum(ln)*100)) + '% of points within ' + str(100*Prob) + '% confidence interval')  
+print(str("%.2f" % (np.sum(ab)/np.sum(ln)*100)) + '% of points above ' + str(100*Prob) + '% confidence interval') 
+print(str("%.2f" % (np.sum(bb)/np.sum(ln)*100)) + '% of points below ' + str(100*Prob) + '% confidence interval')
 
 #Above = pd.DataFrame({'SIt': ab_points[:,0], 'Gt': ab_points[:,1], 'SIt1': ab_points[:,2]})
 #Below = pd.DataFrame({'SIt': bl_points[:,0], 'Gt': bl_points[:,1], 'SIt1': bl_points[:,2]})

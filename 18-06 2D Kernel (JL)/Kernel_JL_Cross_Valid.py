@@ -89,7 +89,7 @@ if __name__ == '__main__':
     for i in range(5):
         input_pts = xval_gen(glucData, 5)
         test_pts = input_pts[i][:,0:2]
-        test_pts = test_pts[0:100]
+        #test_pts = test_pts[0:10]
         input_pts[i] = np.zeros([0, 5])
         input_pts = np.concatenate(input_pts)
         means = np.mean(input_pts[:,0:2], 0)
@@ -104,5 +104,5 @@ if __name__ == '__main__':
             pool.starmap(pdf_sample, [(test_pts[j,:], j) for j in range(len(test_pts))])
         print(time() - start)
     
-        np.save('..//CV Results//PDF_JL_'  + str(Output) + 'H_' + str(i+1), density_func)
-        np.save('..//CV Results//TEST_JL_' + str(Output) + 'H_' + str(i+1), test_pts)
+        np.save('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\18-06 2D Kernel (JL)\\CV Results\\PDF_JL_'  + str(Output) + 'H_' + str(i+1), density_func)
+        np.save('C:\\WinPython-64bit-3.5.4.1Qt5\\Glucose\\18-06 2D Kernel (JL)\\CV Results\\TEST_JL_' + str(Output) + 'H_' + str(i+1), test_pts)
