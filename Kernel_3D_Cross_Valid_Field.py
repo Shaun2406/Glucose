@@ -4,7 +4,7 @@ Created on Fri Jun  8 12:06:41 2018
 
 @author: smd118
 
-Overall Single Output 3D Method, Outputs PDF Field
+3D Method Broken Into Five Sets, Outputs PDF Field
 """
 
 import pandas as pd
@@ -14,7 +14,7 @@ from multiprocessing import Pool, Lock, Array
 
 NUM_THREADS = 8
 
-Output = 1
+Output = 3
 
 def init_worker(lock_, out_, means_, grid_pts_, trf_, res_, lims_, x_out_, y_out_, z_out_):
     global lock, out, means, grid_pts, trf, res, lims, x_out, y_out, z_out
@@ -28,6 +28,16 @@ def init_worker(lock_, out_, means_, grid_pts_, trf_, res_, lims_, x_out_, y_out
     x_out = x_out_
     y_out = y_out_
     z_out = z_out_
+
+def xval_gen(glucData, n):
+    CrossValid =  [0, 0, 0, 0, 0]
+    for i in range(n):
+        CrossValid[i] = np.zeros([0, 4])
+    q = 0
+    for Patient, Data in glucData.groupby('Patient'):
+        q = q+1
+        CrossValid[q % n] = np.append(CrossValid[q % n], Data.loc[:,['SIt', 'Gt', 'SIt+' + str(Output), 'Sigma']].values, 0 )
+    return CrossValid
     
 def transform_grid(grid_pts, means):
     #Bivariate Normal Distribution for Ortho-Normalised Case (Covariance Matrix is Identity Matrix)
@@ -93,7 +103,7 @@ def Trap3D(Arr):
 def load_data():
     #LOADING DATA
     glucData = pd.read_csv('GlucData3H_Overall.csv')
-    glucData = glucData.drop(['Unnamed: 0', 'Operative', 'Patient', 't0', 'GF'], axis = 1)
+    glucData = glucData.drop(['Unnamed: 0', 'Operative', 't0', 'GF'], axis = 1)
     glucData['Gender'] = glucData['Gender'] == 'female'
     glucData['Gender'] = glucData['Gender'].astype(int)
     
@@ -110,43 +120,54 @@ def load_data():
     glucData = glucData.reset_index()
     return glucData
 
-def transform(glucData):
+def transform(X):
     '''Create an Ortho-Normalised Matrix Xdec - 2D, for w(x)'''
-    X = glucData.loc[:,['SIt', 'Gt', 'SIt+' + str(Output)]].values
     C = np.cov(np.transpose(X))
     R = np.linalg.cholesky(C)
     A = np.linalg.inv(np.transpose(R))
     detA = np.linalg.det(A)
     X0 = X - np.mean(X, 0)
     Xdec = np.matmul(X0, A)
-    return (X, Xdec, detA, A)
+    return (X, Xdec, detA, A) 
 
 if __name__ == '__main__':
     __spec__ = "ModuleSpec(name='builtins', loader=<class '_frozen_importlib.BuiltinImporter'>)"
     glucData = load_data()
-    measured, measured_trf, trf_det, trf = transform(glucData)
-    
     sigma = np.load('Sigma_3D_' + str(Output) + 'H.npy')
-    
+    sigma = pd.DataFrame({'Sigma': sigma})
+    glucData = pd.merge(glucData, sigma, left_index = True, right_index = True)
+       
     res = 400
+    grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res), np.linspace(-8.5, -1.5, res)] 
     
-    lims = np.zeros(3)
-    lims[0] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[0] - np.matmul([-8.5, 0.2, -1.5], trf)[0])
-    lims[1] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[1] - np.matmul([-1.5, 1.4, -1.5], trf)[1])
-    lims[2] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[2] - np.matmul([-1.5, 0.2, -8.5], trf)[2])
-    grid_pts = [np.linspace(-8.5, -1.5, res), np.linspace(0.2, 1.4, res), np.linspace(-8.5, -1.5, res)]
-    means = np.mean(measured, 0)
-    x_out, y_out, z_out = transform_grid(grid_pts, means)
+    for i in range(5):
+        print(['Starting Part ' + str(i+1) + ' Now'])
+        
+        start = time()
+        
+        input_pts = xval_gen(glucData, 5)
+        input_pts[i] = np.zeros([0, 4])
+        input_pts = np.concatenate(input_pts)
+        
+        measured, measured_trf, trf_det, trf = transform(input_pts[:,0:3])
+        
+        lims = np.zeros(3)
+        lims[0] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[0] - np.matmul([-8.5, 0.2, -1.5], trf)[0])
+        lims[1] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[1] - np.matmul([-1.5, 1.4, -1.5], trf)[1])
+        lims[2] = abs(np.matmul([-1.5, 0.2, -1.5], trf)[2] - np.matmul([-1.5, 0.2, -8.5], trf)[2])
 
-    
-    print('Starting Now')
-    start = time()
-    density_func_raw = Array('d', res**3)
-    density_func = np.frombuffer(density_func_raw.get_obj()).reshape((res, res, res))
-    density_func.fill(0)
-    with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw, means, grid_pts, trf, res, lims, x_out, y_out, z_out)) as pool:
-        pool.starmap(trivar_norm, [(measured_trf[i], sigma[i]) for i in range(len(measured_trf))])
-    print(time() - start)
-    density_func = density_func*trf_det
-    np.save('PDF_3D_' + str(Output) + 'H', density_func)
-    print(Trap3D(density_func))
+        means = np.mean(measured, 0)
+        x_out, y_out, z_out = transform_grid(grid_pts, means)
+        
+        density_func_raw = Array('d', res**3)
+        density_func = np.frombuffer(density_func_raw.get_obj()).reshape((res, res, res))
+        density_func.fill(0)
+        
+        with Pool(processes=8, initializer=init_worker, initargs=(Lock(), density_func_raw, means, grid_pts, trf, res, lims, x_out, y_out, z_out)) as pool:
+            pool.starmap(trivar_norm, [(measured_trf[i], input_pts[i,3]) for i in range(len(measured_trf))])
+        
+        density_func = density_func*trf_det
+        
+        print(time() - start)
+        
+        np.save('..//PDF_3D_'  + str(Output) + 'H_' + str(i+1), density_func)     
